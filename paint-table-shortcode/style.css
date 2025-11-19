@@ -1,0 +1,94 @@
+/* Wrapper: keep table from stretching full-width */
+.pct-table-wrapper {
+    overflow-x: auto;
+    margin: 1.5rem auto;
+    max-width: 720px; /* narrower to reduce empty space */
+}
+
+/* Range title above table */
+.pct-table-title {
+    margin: 0 0 0.75rem;
+    font-size: 1.4rem;
+    font-weight: 600;
+    text-align: left;
+}
+
+/* Base table */
+table.pct-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+/* Header row: dark background, light text */
+table.pct-table thead {
+    background: #111827;
+}
+
+table.pct-table thead th {
+    color: #f9fafb;
+    font-weight: 600;
+    padding: 0.75rem 0.9rem;
+}
+
+/* Cells */
+table.pct-table th,
+table.pct-table td {
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: center; /* centre text in all columns */
+}
+
+/* Zebra stripes */
+table.pct-table tbody tr:nth-child(even) {
+    background: #f9fafb;
+}
+
+table.pct-table tbody tr:hover {
+    background: #e5f2ff;
+}
+
+/* Swatch column */
+.pct-col-swatch {
+    width: 40px;
+}
+
+.pct-cell-swatch {
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
+}
+
+.pct-swatch {
+    display: inline-block;
+    width: 1.4rem;
+    height: 1.4rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,.12);
+    box-shadow: 0 0 0 1px rgba(255,255,255,.45) inset;
+}
+
+/* Name / number styling: inherit theme fonts */
+.pct-name {
+    font-weight: 500;
+}
+
+.pct-cell-number {
+    font-family: inherit;
+}
+
+/* Links column */
+.pct-cell-links a {
+    text-decoration: none;
+    border-bottom: 1px solid rgba(59,130,246,.4);
+}
+
+.pct-cell-links a:hover {
+    border-bottom-color: rgba(59,130,246,.9);
+}
+
+/* Simple mobile tweak */
+@media (max-width: 640px) {
+    .pct-table-title {
+        text-align: center;
+    }
+}
