@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Paint Table Shortcodes
  * Description: Shortcode [paint_table] to display paint colour tables (starting with Vallejo Model Color), plus CSV import.
- * Version: 0.2.0
+ * Version: 0.2.2
  * Author: C4813
  * Text Domain: pct
  */
