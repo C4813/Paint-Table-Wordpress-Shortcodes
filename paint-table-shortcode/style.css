@@ -1,61 +1,75 @@
-/* Wrapper: keep table from stretching full-width */
+/* ============================
+   Frontend styles: Paint Table
+   ============================ */
+
+/* Outer container – keeps the block centred in the content area */
+.pct-table-container {
+    width: 100%;
+    margin: 20px auto;
+}
+
+/* Optional range title above the table */
+.pct-range-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+/* Wrapper – centers the (auto-width) table and allows scroll if needed */
 .pct-table-wrapper {
     overflow-x: auto;
-    margin: 1.5rem auto;
-    max-width: 720px; /* narrower to reduce empty space */
+    text-align: center; /* center inline-table below */
 }
 
-/* Range title above table */
-.pct-table-title {
-    margin: 0 0 0.75rem;
-    font-size: 1.4rem;
-    font-weight: 600;
-    text-align: left;
-}
-
-/* Base table */
-table.pct-table {
-    width: 100%;
+/* Core table styling */
+.pct-table-container table.pct-table {
     border-collapse: collapse;
     font-size: 14px;
+    table-layout: auto;            /* let content decide widths */
+    width: auto !important;        /* do NOT stretch to 100% */
+    display: inline-table;         /* so text-align:center wrapper works */
+    margin: 0 auto;
 }
 
-/* Header row: dark background, light text */
-table.pct-table thead {
-    background: #111827;
+/* Header background + text */
+.pct-table-container table.pct-table thead {
+    background-color: #111827;
 }
 
-table.pct-table thead th {
+.pct-table-container table.pct-table thead th {
     color: #f9fafb;
     font-weight: 600;
-    padding: 0.75rem 0.9rem;
+    text-align: center;
 }
 
-/* Cells */
-table.pct-table th,
-table.pct-table td {
-    padding: 0.7rem 0.9rem;
+/* Cells (header + body) */
+.pct-table-container table.pct-table th,
+.pct-table-container table.pct-table td {
+    padding: 0.4rem 0.5rem;
     border-bottom: 1px solid #e5e7eb;
-    text-align: center; /* centre text in all columns */
+    text-align: center;
 }
 
-/* Zebra stripes */
-table.pct-table tbody tr:nth-child(even) {
-    background: #f9fafb;
+/* Zebra striping – applied directly to cells with !important
+   so theme hover styles cannot override it */
+.pct-table-container table.pct-table tbody tr:nth-child(odd) td {
+    background-color: #ffffff !important;
 }
 
-table.pct-table tbody tr:hover {
-    background: #e5f2ff;
+.pct-table-container table.pct-table tbody tr:nth-child(even) td {
+    background-color: #f7f7f7 !important;
 }
+
+/* NOTE: no hover styles for rows/cells here at all.
+   Theme hover rules can't visually win because the cell
+   backgrounds above are marked !important. */
 
 /* Swatch column */
-.pct-col-swatch {
-    width: 40px;
+.pct-swatch-header {
+    width: 36px;
 }
 
-.pct-cell-swatch {
-    padding-left: 0.4rem;
-    padding-right: 0.4rem;
+.pct-swatch-cell {
+    text-align: center;
 }
 
 .pct-swatch {
@@ -65,30 +79,38 @@ table.pct-table tbody tr:hover {
     border-radius: 999px;
     border: 1px solid rgba(0,0,0,.12);
     box-shadow: 0 0 0 1px rgba(255,255,255,.45) inset;
+    vertical-align: middle;
 }
 
-/* Name / number styling: inherit theme fonts */
+/* Colour name */
 .pct-name {
     font-weight: 500;
+    white-space: nowrap;
 }
 
-.pct-cell-number {
-    font-family: inherit;
+/* Number column: narrow */
+.pct-number {
+    width: 90px;      /* adjust to taste */
 }
 
-/* Links column */
-.pct-cell-links a {
+/* Models column: narrow */
+.pct-models {
+    width: 100px;
+}
+
+.pct-models a {
     text-decoration: none;
     border-bottom: 1px solid rgba(59,130,246,.4);
 }
 
-.pct-cell-links a:hover {
+.pct-models a:hover {
     border-bottom-color: rgba(59,130,246,.9);
 }
 
-/* Simple mobile tweak */
+/* Responsive: hide Models column on very small screens if needed */
 @media (max-width: 640px) {
-    .pct-table-title {
-        text-align: center;
+    .pct-models-header,
+    .pct-models {
+        display: none;
     }
 }
