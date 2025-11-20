@@ -155,9 +155,23 @@ jQuery(function($) {
         $container.find('.pct-mix-result-swatch').css('background-color', mixedHex);
     }
 
-    // Parts inputs still drive recalculation
+    // Parts inputs: enforce whole numbers > 0
     $(document).on('change input', '.pct-mix-parts', function() {
-        var $container = $(this).closest('.pct-mix-container');
+        var $input = $(this);
+        var raw = $input.val();
+
+        var num = parseFloat(raw);
+        if (!isFinite(num) || num <= 0) {
+            num = 1;
+        }
+        num = Math.floor(num);
+        if (num < 1) {
+            num = 1;
+        }
+
+        $input.val(num);
+
+        var $container = $input.closest('.pct-mix-container');
         if ($container.length) {
             updateMix($container);
         }
