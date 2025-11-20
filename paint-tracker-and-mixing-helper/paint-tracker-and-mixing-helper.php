@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Paint Tracker and Mixing Helper
  * Description: Shortcodes and tools for tracking paints, displaying paint colour tables, and importing/exporting from CSV.
- * Version: 0.3.1
+ * Version: 0.3.2
  * Author: C4813
  * Text Domain: pct
  */
@@ -26,7 +26,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         const META_LINK     = '_pct_link'; // legacy single link
 
         // Plugin version (used for asset cache-busting)
-        const VERSION = '0.3.1';
+        const VERSION = '0.3.2';
 
         public function __construct() {
             add_action( 'init',                    [ $this, 'register_types' ] );
@@ -582,82 +582,90 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         }
 
         /**
-         * Shortcode handler for [mixing-helper].
+         * Shortcode: [mixing_helper]
          *
-         * Uses template-mixing-helper.php for markup.
+         * Shows a two-paint mixing UI with ranges + paints.
          */
         public function shortcode_mixing_helper( $atts ) {
-            // Fetch all paints (sorted by NUMBER, not title)
-            $args = [
-                'post_type'      => self::CPT,
-                'posts_per_page' => -1,
-                'post_status'    => 'publish',
-                'orderby'        => 'meta_value',
-                'order'          => 'ASC',
-                'meta_key'       => self::META_NUMBER,
-            ];
-
-            $q = new WP_Query( $args );
-
-            if ( ! $q->have_posts() ) {
-                return '<p>' . esc_html__( 'No paints found.', 'pct' ) . '</p>';
+            // Get all paint ranges
+            $ranges = get_terms(
+                [
+                    'taxonomy'   => self::TAX,
+                    'hide_empty' => false,
+                    'orderby'    => 'name',
+                    'order'      => 'ASC',
+                ]
+            );
+    
+            if ( is_wp_error( $ranges ) || empty( $ranges ) ) {
+                return '<p>' . esc_html__( 'No paint ranges found.', 'pct' ) . '</p>';
             }
-
+    
+            // Query all paints in these ranges, ordered by number
+            $range_ids = wp_list_pluck( $ranges, 'term_id' );
+    
+            $q = new WP_Query(
+                [
+                    'post_type'      => self::CPT,
+                    'post_status'    => 'publish',
+                    'posts_per_page' => -1,
+                    'orderby'        => 'meta_value',
+                    'order'          => 'ASC',
+                    'meta_key'       => self::META_NUMBER,
+                    'tax_query'      => [
+                        [
+                            'taxonomy' => self::TAX,
+                            'field'    => 'term_id',
+                            'terms'    => $range_ids,
+                        ],
+                    ],
+                ]
+            );
+    
+            if ( ! $q->have_posts() ) {
+                return '<p>' . esc_html__( 'No paints found for mixing.', 'pct' ) . '</p>';
+            }
+    
             $paints = [];
+    
             while ( $q->have_posts() ) {
                 $q->the_post();
+                $post_id = get_the_ID();
+    
                 $name   = get_the_title();
-                $number = get_post_meta( get_the_ID(), self::META_NUMBER, true );
-                $hex    = get_post_meta( get_the_ID(), self::META_HEX, true );
-
-                // Skip paints without a hex colour, as we cannot mix them
-                if ( ! $hex ) {
-                    continue;
-                }
-
+                $number = get_post_meta( $post_id, self::META_NUMBER, true );
+                $hex    = get_post_meta( $post_id, self::META_HEX, true );
+    
+                // Take the first range term for this paint (if multiple, first is fine)
+                $term_ids = wp_get_object_terms(
+                    $post_id,
+                    self::TAX,
+                    [
+                        'fields' => 'ids',
+                    ]
+                );
+    
+                $range_id = ! empty( $term_ids ) ? (int) $term_ids[0] : 0;
+    
                 $paints[] = [
-                    'name'   => $name,
-                    'number' => $number,
-                    'hex'    => $hex,
+                    'id'       => $post_id,
+                    'name'     => $name,
+                    'number'   => $number,
+                    'hex'      => $hex,
+                    'range_id' => $range_id,
                 ];
             }
+    
             wp_reset_postdata();
-
+    
             if ( empty( $paints ) ) {
-                return '<p>' . esc_html__( 'No paints with hex colours found.', 'pct' ) . '</p>';
+                return '<p>' . esc_html__( 'No paints found for mixing.', 'pct' ) . '</p>';
             }
-
-            // Helper to decide text colour vs background (simple luminance check)
-            $pick_text_colour = static function( $hex ) {
-                $hex = trim( $hex );
-                if ( strpos( $hex, '#' ) === 0 ) {
-                    $hex = substr( $hex, 1 );
-                }
-                if ( strlen( $hex ) !== 6 || ! ctype_xdigit( $hex ) ) {
-                    return '#000000';
-                }
-                $r = hexdec( substr( $hex, 0, 2 ) );
-                $g = hexdec( substr( $hex, 2, 2 ) );
-                $b = hexdec( substr( $hex, 4, 2 ) );
-                // Perceived brightness
-                $brightness = ( 0.299 * $r ) + ( 0.587 * $g ) + ( 0.114 * $b );
-                return ( $brightness > 186 ) ? '#000000' : '#ffffff';
-            };
-
-            // Prepare final paint data for template
-            foreach ( $paints as &$paint ) {
-                $label = $paint['name'];
-                if ( ! empty( $paint['number'] ) ) {
-                    $label .= ' (' . $paint['number'] . ')';
-                }
-                $paint['label']      = $label;
-                $paint['text_color'] = $pick_text_colour( $paint['hex'] );
-            }
-            unset( $paint );
-
-            $pct_mixing_paints       = $paints;
-            $pct_mixing_placeholder  = __( 'Select a paint', 'pct' );
-
+    
+            // Expose to template
+            $pct_ranges = $ranges;
+            $pct_paints = $paints;
+    
             ob_start();
             include plugin_dir_path( __FILE__ ) . 'template-mixing-helper.php';
             return ob_get_clean();
