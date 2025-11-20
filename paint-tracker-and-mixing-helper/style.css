@@ -142,7 +142,7 @@
     border-radius: 6px;
     padding: 12px 14px;
     margin: 20px 0;
-    max-width: 520px;
+    max-width: 640px; /* widened to avoid wrapping when names are long */
 }
 
 .pct-mix-row {
@@ -160,16 +160,18 @@
     margin: 0 0 8px;
 }
 
-/* Inputs / dropdown overall sizing */
-.pct-mix-dropdown,
-.pct-mix-parts {
+/* Dropdown sizing */
+.pct-mix-dropdown {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
 }
 
-/* Parts input */
+/* Parts input – narrower, but responsive */
 .pct-mix-parts {
+    width: 120px;
+    max-width: 100%;
+    box-sizing: border-box;
     padding: 6px 8px;
     border-radius: 4px;
     border: 1px solid #d1d5db;
