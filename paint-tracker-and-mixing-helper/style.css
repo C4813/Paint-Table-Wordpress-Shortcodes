@@ -115,6 +115,7 @@
     }
 }
 
+
 /* ============================
    Admin styles
    ============================ */
@@ -131,3 +132,190 @@
     margin: 4px 0;
 }
 
+
+/* ============================
+   Mixing helper
+   ============================ */
+
+.pct-mix-container {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin: 20px 0;
+    max-width: 520px;
+}
+
+.pct-mix-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.pct-mix-column {
+    flex: 1 1 220px;
+}
+
+.pct-mix-field {
+    margin: 0 0 8px;
+}
+
+/* Inputs / dropdown overall sizing */
+.pct-mix-dropdown,
+.pct-mix-parts {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Parts input */
+.pct-mix-parts {
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid #d1d5db;
+}
+
+/* Stack columns on smaller screens */
+@media (max-width: 640px) {
+    .pct-mix-row {
+        flex-direction: column;
+    }
+}
+
+/* Result display */
+
+.pct-mix-result-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.pct-mix-result-label {
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.pct-mix-result-hex {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+
+.pct-mix-result-swatch {
+    display: inline-block;
+    width: 5rem;
+    height: 5rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,.18);
+    box-shadow: 0 0 0 1px rgba(255,255,255,.5) inset;
+}
+
+/* Custom dropdown for mixing helper */
+
+.pct-mix-dropdown {
+    position: relative;
+    font-size: 14px;
+}
+
+.pct-mix-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    cursor: pointer;
+    text-align: left;
+}
+
+.pct-mix-trigger:focus {
+    outline: 2px solid #2563eb;
+    outline-offset: 1px;
+}
+
+.pct-mix-trigger-swatch {
+    width: 1.4rem;
+    height: 1.4rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,.18);
+    box-shadow: 0 0 0 1px rgba(255,255,255,.5) inset;
+    background: transparent;
+    flex-shrink: 0;
+}
+
+.pct-mix-trigger-label {
+    flex: 1 1 auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pct-mix-trigger-caret {
+    font-size: 10px;
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+/* Options list */
+
+.pct-mix-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    max-height: 260px;
+    overflow-y: auto;
+    border-radius: 4px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    box-shadow: 0 10px 20px rgba(0,0,0,.08);
+    z-index: 50;
+}
+
+.pct-mix-dropdown:not(.pct-mix-open) .pct-mix-list {
+    display: none;
+}
+
+.pct-mix-dropdown.pct-mix-open .pct-mix-list[hidden] {
+    display: block;
+}
+
+/* Individual option rows */
+/* Background + text colour are set inline from PHP using the paint's hex. */
+
+.pct-mix-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    cursor: pointer;
+}
+
+.pct-mix-option-swatch {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,.25);
+    box-shadow: 0 0 0 1px rgba(255,255,255,.4) inset;
+    background: transparent;
+    flex-shrink: 0;
+}
+
+.pct-mix-option-label {
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Slight outline for selected row, without changing its colour */
+.pct-mix-option.is-selected {
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,.6);
+}
