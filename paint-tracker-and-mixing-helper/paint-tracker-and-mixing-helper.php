@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Paint Tracker and Mixing Helper
  * Description: Shortcodes and tools for tracking paints, displaying paint colour tables, and importing/exporting from CSV.
- * Version: 0.2.3
+ * Version: 0.2.4
  * Author: C4813
  * Text Domain: pct
  */
@@ -26,7 +26,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         const META_LINK     = '_pct_link'; // legacy single link
 
         // Plugin version (used for asset cache-busting)
-        const VERSION = '0.2.2';
+        const VERSION = '0.2.4';
 
         public function __construct() {
             add_action( 'init',                    [ $this, 'register_types' ] );
@@ -351,35 +351,8 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             $hex      = get_post_meta( $post->ID, self::META_HEX, true );
             $on_shelf = get_post_meta( $post->ID, self::META_ON_SHELF, true );
 
-            // Multiple links stored as array of ['title' => ..., 'url' => ...]
-            $links = get_post_meta( $post->ID, self::META_LINKS, true );
-
-            // Backwards compatibility for old single-link meta
-            if ( empty( $links ) ) {
-                $legacy_url = get_post_meta( $post->ID, self::META_LINK, true );
-                if ( $legacy_url ) {
-                    $links = [
-                        [
-                            'title' => '',
-                            'url'   => $legacy_url,
-                        ],
-                    ];
-                } else {
-                    $links = [];
-                }
-            } elseif ( is_array( $links ) && ! empty( $links ) ) {
-                $first = reset( $links );
-                if ( is_string( $first ) ) {
-                    $converted = [];
-                    foreach ( $links as $url ) {
-                        $converted[] = [
-                            'title' => '',
-                            'url'   => $url,
-                        ];
-                    }
-                    $links = $converted;
-                }
-            }
+            // Reuse helper to normalise links (handles legacy + array formats)
+            $links = $this->get_paint_links( $post->ID );
 
             // Variables for the admin template
             $pct_admin_view  = 'meta_box';
@@ -425,7 +398,10 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
              * Only update the on_shelf flag, do NOT touch number/hex/links.
              * (Bulk edit is handled separately in handle_bulk_edit())
              */
-            if ( $has_inline_nonce && ! $has_meta_nonce && isset( $_POST['pct_on_shelf'] ) ) {
+            if ( $has_inline_nonce && ! $has_meta_nonce ) {
+                // Checkbox present in the Quick Edit form:
+                // - if checked => $_POST['pct_on_shelf'] is set
+                // - if unchecked => it is not set at all
                 $on_shelf = isset( $_POST['pct_on_shelf'] ) ? '1' : '0';
                 update_post_meta( $post_id, self::META_ON_SHELF, $on_shelf );
                 return;
@@ -462,7 +438,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
 
             for ( $i = 0; $i < $count; $i++ ) {
                 $title = isset( $titles[ $i ] ) ? trim( $titles[ $i ] ) : '';
-                $url   = isset( $urls[ $i ] ) ? trim( $urls[ $i ] )   : '';
+                $url   = isset( $urls[ $i ] )   ? trim( $urls[ $i ] )   : '';
 
                 if ( '' === $url ) {
                     continue; // skip empty rows
