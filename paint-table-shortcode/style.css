@@ -114,3 +114,20 @@
         display: none;
     }
 }
+
+/* ============================
+   Admin styles
+   ============================ */
+
+.pct-link-row {
+    margin-bottom: 8px;
+    padding: 6px 8px;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    background: #f8f9fa;
+}
+
+.pct-link-row-field {
+    margin: 4px 0;
+}
+
