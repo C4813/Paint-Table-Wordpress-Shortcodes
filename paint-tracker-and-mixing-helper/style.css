@@ -130,7 +130,7 @@
 
 
 /* ============================
-   Mixing helper
+   Mixing helper – main mixer
    ============================ */
 
 .pct-mix-container {
@@ -155,6 +155,11 @@
     flex-direction: column;
     align-items: center;  /* centers titles + inputs */
     text-align: center;   /* centers text in labels */
+}
+
+/* Don't let the shade helper column stretch and create a big blank area */
+.pct-mix-column-shade {
+    flex: 0 0 auto;
 }
 
 .pct-mix-field {
@@ -227,6 +232,102 @@
     border-radius: 999px;
     border: 1px solid rgba(0,0,0,.18);
     box-shadow: 0 0 0 1px rgba(255,255,255,.5) inset;
+}
+
+
+/* ============================
+   Shade helper (separate tool)
+   ============================ */
+
+/* Separate box for the shade helper */
+.pct-shade-container {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin: 20px auto;
+    max-width: 640px;
+}
+
+.pct-shade-helper {
+    margin-top: 0;
+    padding-top: 0;
+}
+
+.pct-shade-header {
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.pct-shade-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* slightly tighter than main mixer */
+    align-items: stretch;
+}
+
+/* only tighten spacing INSIDE shade helper, not main mixer */
+.pct-shade-container .pct-mix-column {
+    align-items: center;
+    text-align: center;
+}
+
+.pct-shade-container .pct-mix-field {
+    margin-bottom: 4px; /* tighter than default 8px */
+}
+
+.pct-shade-scale {
+    margin-top: 6px;      /* small, consistent gap */
+    padding-top: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* kill any collapsing top margin on first child (empty text or first shade row) */
+.pct-shade-scale > *:first-child {
+    margin-top: 0 !important;
+}
+
+.pct-shade-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff; /* overridden inline per shade */
+}
+
+.pct-shade-row-base {
+    border-width: 2px;
+}
+
+.pct-shade-meta {
+    flex: 1 1 auto;
+}
+
+.pct-shade-ratio {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.pct-shade-paint {
+    font-size: 12px;
+    /* no fixed color here so it can inherit white/black from row */
+}
+
+.pct-shade-hex {
+    /* inherit font-family from theme */
+    font-size: 13px;
+    opacity: 0.9;
+}
+
+.pct-shade-empty {
+    font-size: 13px;
+    text-align: center;
+    color: #6b7280;
+    margin: 4px 0 0; /* avoid big top gap */
 }
 
 
@@ -342,3 +443,24 @@
 .pct-mix-range-option.is-selected {
     box-shadow: inset 0 0 0 2px rgba(255,255,255,.6);
 }
+
+/* Mixer result styled like shade helper */
+#pct-mix-result-row {
+    width: 100%;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-top: 12px;
+    box-sizing: border-box;
+}
+
+#pct-mix-result-label-text {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+#pct-mix-result-hex {
+    font-size: 13px;
+    opacity: 0.9;
+}
+
