@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Paint Tracker and Mixing Helper
  * Description: Shortcodes and tools for tracking paints, displaying paint colour tables, and importing/exporting from CSV.
- * Version: 0.3.2
+ * Version: 0.3.3
  * Author: C4813
  * Text Domain: pct
  */
@@ -577,7 +577,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             $pct_range_title = $range_title;
 
             ob_start();
-            include plugin_dir_path( __FILE__ ) . 'template.php';
+            include plugin_dir_path( __FILE__ ) . 'paint-display-template.php';
             return ob_get_clean();
         }
 
@@ -667,7 +667,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             $pct_paints = $paints;
     
             ob_start();
-            include plugin_dir_path( __FILE__ ) . 'template-mixing-helper.php';
+            include plugin_dir_path( __FILE__ ) . 'mixing-helper-template.php';
             return ob_get_clean();
         }
 
