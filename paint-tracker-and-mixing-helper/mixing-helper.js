@@ -274,8 +274,8 @@ jQuery(function($) {
             'color': textColorForHex(mixedHex)
         });
     
-        // Show once we have a valid result
-        $resultBlock.show();
+        // Show once we have a valid result (as flex)
+        $resultBlock.css('display', 'flex');
     }
 
     // Parts inputs: enforce whole numbers > 0
