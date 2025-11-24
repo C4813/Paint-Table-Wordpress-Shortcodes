@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Paint Tracker and Mixing Helper
  * Description: Shortcodes and tools for tracking paints, displaying paint colour tables, and importing/exporting from CSV.
- * Version: 0.4.4
+ * Version: 0.5.0
  * Author: C4813
  * Text Domain: pct
  */
@@ -26,7 +26,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         const META_LINK     = '_pct_link'; // legacy single link
 
         // Plugin version (used for asset cache-busting)
-        const VERSION = '0.4.4';
+        const VERSION = '0.5.0';
 
         public function __construct() {
             add_action( 'init',                    [ $this, 'register_types' ] );
@@ -35,6 +35,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             add_action( 'save_post_' . self::CPT,  [ $this, 'save_paint_meta' ], 10, 2 );
             add_shortcode( 'paint_table',          [ $this, 'shortcode_paint_table' ] );
             add_shortcode( 'mixing-helper',        [ $this, 'shortcode_mixing_helper' ] );
+            add_shortcode( 'shade-helper',         [ $this, 'shortcode_shade_helper' ] );
             add_action( 'wp_enqueue_scripts',      [ $this, 'enqueue_frontend_assets' ] );
 
             // Admin assets (CSS + JS)
@@ -460,7 +461,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         }
 
         /**
-         * Enqueue front-end stylesheet + mixing helper JS.
+         * Enqueue front-end stylesheet + helper JS.
          */
         public function enqueue_frontend_assets() {
             wp_enqueue_style(
@@ -473,6 +474,14 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             wp_enqueue_script(
                 'pct_mixing_helper',
                 plugin_dir_url( __FILE__ ) . 'mixing-helper.js',
+                [ 'jquery' ],
+                self::VERSION,
+                true
+            );
+
+            wp_enqueue_script(
+                'pct_shade_helper',
+                plugin_dir_url( __FILE__ ) . 'shade-helper.js',
                 [ 'jquery' ],
                 self::VERSION,
                 true
@@ -577,81 +586,18 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             $pct_paints           = $paints_data;
             $pct_range_title      = $range_title;
             $pct_mixing_page_url  = get_option( 'pct_mixing_page_url', '' );
-            
+
             ob_start();
             include plugin_dir_path( __FILE__ ) . 'paint-display-template.php';
             return ob_get_clean();
         }
 
         /**
-         * Helper: render paint options for mixing dropdowns.
-         *
-         * @param array $paints Array of paints.
-         */
-        public static function render_mix_paint_options( $paints ) {
-            foreach ( $paints as $paint ) {
-                $name     = isset( $paint['name'] ) ? $paint['name'] : '';
-                $number   = isset( $paint['number'] ) ? $paint['number'] : '';
-                $hex      = isset( $paint['hex'] ) ? $paint['hex'] : '';
-                $range_id = isset( $paint['range_id'] ) ? (int) $paint['range_id'] : 0;
-
-                if ( '' === $name || '' === $hex || ! $range_id ) {
-                    continue;
-                }
-
-                $label = $name;
-                if ( '' !== $number ) {
-                    $label .= ' (' . $number . ')';
-                }
-
-                // Choose text colour for contrast (simple luminance check)
-                $text_color = '#000000';
-                $hex_clean  = ltrim( $hex, '#' );
-                if ( strlen( $hex_clean ) === 6 ) {
-                    $r = hexdec( substr( $hex_clean, 0, 2 ) );
-                    $g = hexdec( substr( $hex_clean, 2, 2 ) );
-                    $b = hexdec( substr( $hex_clean, 4, 2 ) );
-                    $luminance = ( 0.299 * $r + 0.587 * $g + 0.114 * $b ) / 255;
-                    $text_color = ( $luminance < 0.5 ) ? '#f9fafb' : '#111827';
-                }
-
-                $style = sprintf(
-                    'background-color:%1$s;color:%2$s;',
-                    esc_attr( $hex ),
-                    esc_attr( $text_color )
-                );
-                ?>
-                <div class="pct-mix-option"
-                     data-hex="<?php echo esc_attr( $hex ); ?>"
-                     data-label="<?php echo esc_attr( $label ); ?>"
-                     data-range="<?php echo esc_attr( $range_id ); ?>"
-                     style="<?php echo $style; ?>">
-                    <span class="pct-mix-option-swatch"></span>
-                    <span class="pct-mix-option-label"><?php echo esc_html( $label ); ?></span>
-                </div>
-                <?php
-            }
-        }
-
-        /**
-         * Shortcode: [mixing_helper]
+         * Shortcode: [mixing-helper]
          *
          * Shows a two-paint mixing UI with ranges + paints.
          */
         public function shortcode_mixing_helper( $atts ) {
-            // Optional: default shade hex passed via URL when coming from [paint_table]
-            $default_shade_hex = '';
-            if ( isset( $_GET['pct_shade_hex'] ) ) {
-                $raw_hex = sanitize_text_field( wp_unslash( $_GET['pct_shade_hex'] ) );
-                $raw_hex = trim( $raw_hex );
-                if ( '' !== $raw_hex ) {
-                    if ( $raw_hex[0] !== '#' ) {
-                        $raw_hex = '#' . $raw_hex;
-                    }
-                    $default_shade_hex = $raw_hex;
-                }
-            }
-        
             // Get all paint ranges
             $ranges = get_terms(
                 [
@@ -728,12 +674,120 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             }
 
             // Expose to template
+            $pct_ranges = $ranges;
+            $pct_paints = $paints;
+
+            ob_start();
+            include plugin_dir_path( __FILE__ ) . 'mixing-helper-template.php';
+            return ob_get_clean();
+        }
+
+        /**
+         * Shortcode: [shade-helper]
+         *
+         * Shows the shade range helper as a standalone tool.
+         */
+        public function shortcode_shade_helper( $atts ) {
+            // Optional: default shade hex passed via URL when coming from [paint_table]
+            $default_shade_hex = '';
+            if ( isset( $_GET['pct_shade_hex'] ) ) {
+                // Decode any %23 etc, then sanitise/trim
+                $raw_hex = wp_unslash( $_GET['pct_shade_hex'] );
+                $raw_hex = rawurldecode( $raw_hex );
+                $raw_hex = sanitize_text_field( $raw_hex );
+                $raw_hex = trim( $raw_hex );
+            
+                if ( '' !== $raw_hex ) {
+                    // Ensure it starts with '#'
+                    if ( $raw_hex[0] !== '#' ) {
+                        $raw_hex = '#' . $raw_hex;
+                    }
+                    $default_shade_hex = $raw_hex;
+                }
+            }
+
+            // Get all paint ranges
+            $ranges = get_terms(
+                [
+                    'taxonomy'   => self::TAX,
+                    'hide_empty' => false,
+                    'orderby'    => 'name',
+                    'order'      => 'ASC',
+                ]
+            );
+
+            if ( is_wp_error( $ranges ) || empty( $ranges ) ) {
+                return '<p>' . esc_html__( 'No paint ranges found.', 'pct' ) . '</p>';
+            }
+
+            // Query all paints in these ranges, ordered by number
+            $range_ids = wp_list_pluck( $ranges, 'term_id' );
+
+            $q = new WP_Query(
+                [
+                    'post_type'      => self::CPT,
+                    'post_status'    => 'publish',
+                    'posts_per_page' => -1,
+                    'orderby'        => 'meta_value',
+                    'order'          => 'ASC',
+                    'meta_key'       => self::META_NUMBER,
+                    'tax_query'      => [
+                        [
+                            'taxonomy' => self::TAX,
+                            'field'    => 'term_id',
+                            'terms'    => $range_ids,
+                        ],
+                    ],
+                ]
+            );
+
+            if ( ! $q->have_posts() ) {
+                return '<p>' . esc_html__( 'No paints found for shade helper.', 'pct' ) . '</p>';
+            }
+
+            $paints = [];
+
+            while ( $q->have_posts() ) {
+                $q->the_post();
+                $post_id = get_the_ID();
+
+                $name   = get_the_title();
+                $number = get_post_meta( $post_id, self::META_NUMBER, true );
+                $hex    = get_post_meta( $post_id, self::META_HEX, true );
+
+                // Take the first range term for this paint (if multiple, first is fine)
+                $term_ids = wp_get_object_terms(
+                    $post_id,
+                    self::TAX,
+                    [
+                        'fields' => 'ids',
+                    ]
+                );
+
+                $range_id = ! empty( $term_ids ) ? (int) $term_ids[0] : 0;
+
+                $paints[] = [
+                    'id'       => $post_id,
+                    'name'     => $name,
+                    'number'   => $number,
+                    'hex'      => $hex,
+                    'range_id' => $range_id,
+                ];
+            }
+
+            wp_reset_postdata();
+
+            if ( empty( $paints ) ) {
+                return '<p>' . esc_html__( 'No paints found for shade helper.', 'pct' ) . '</p>';
+            }
+
+            // Expose to template
             $pct_ranges            = $ranges;
             $pct_paints            = $paints;
             $pct_default_shade_hex = $default_shade_hex;
-            
+
             ob_start();
-            include plugin_dir_path( __FILE__ ) . 'mixing-helper-template.php';
+            include plugin_dir_path( __FILE__ ) . 'shade-helper-template.php';
             return ob_get_clean();
         }
 
@@ -793,6 +847,56 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         }
 
         /**
+         * Helper: render paint options for mixing/shade dropdowns.
+         *
+         * @param array $paints Array of paints.
+         */
+        public static function render_mix_paint_options( $paints ) {
+            foreach ( $paints as $paint ) {
+                $name     = isset( $paint['name'] ) ? $paint['name'] : '';
+                $number   = isset( $paint['number'] ) ? $paint['number'] : '';
+                $hex      = isset( $paint['hex'] ) ? $paint['hex'] : '';
+                $range_id = isset( $paint['range_id'] ) ? (int) $paint['range_id'] : 0;
+
+                if ( '' === $name || '' === $hex || ! $range_id ) {
+                    continue;
+                }
+
+                $label = $name;
+                if ( '' !== $number ) {
+                    $label .= ' (' . $number . ')';
+                }
+
+                // Choose text colour for contrast (simple luminance check)
+                $text_color = '#000000';
+                $hex_clean  = ltrim( $hex, '#' );
+                if ( strlen( $hex_clean ) === 6 ) {
+                    $r = hexdec( substr( $hex_clean, 0, 2 ) );
+                    $g = hexdec( substr( $hex_clean, 2, 2 ) );
+                    $b = hexdec( substr( $hex_clean, 4, 2 ) );
+                    $luminance = ( 0.299 * $r + 0.587 * $g + 0.114 * $b ) / 255;
+                    $text_color = ( $luminance < 0.5 ) ? '#f9fafb' : '#111827';
+                }
+
+                $style = sprintf(
+                    'background-color:%1$s;color:%2$s;',
+                    esc_attr( $hex ),
+                    esc_attr( $text_color )
+                );
+                ?>
+                <div class="pct-mix-option"
+                    data-hex="<?php echo esc_attr( $hex ); ?>"
+                    data-label="<?php echo esc_attr( $label ); ?>"
+                    data-range="<?php echo esc_attr( $range_id ); ?>"
+                    style="<?php echo $style; ?>">
+                    <span class="pct-mix-option-swatch"></span>
+                    <span class="pct-mix-option-label"><?php echo esc_html( $label ); ?></span>
+                </div>
+                <?php
+            }
+        }
+
+        /**
          * Register "Import from CSV" submenu.
          */
         public function register_import_page() {
@@ -805,7 +909,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 [ $this, 'render_import_page' ]
             );
         }
-        
+
         /**
          * Register "Info & Settings" submenu.
          */
@@ -833,7 +937,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 [ $this, 'render_export_page' ]
             );
         }
-        
+
         /**
          * Render the Info & Settings page and handle saving the URL option.
          * Delegates HTML to admin/template.php.
