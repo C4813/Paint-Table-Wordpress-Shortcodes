@@ -32,6 +32,10 @@ jQuery(function($) {
     }
 
     function rgbToHex(r, g, b) {
+        return '#' + componentToHex(r) + componentToHex(b);
+    }
+
+    function rgbToHex(r, g, b) {
         return '#' + componentToHex(r) + componentToHex(g) + componentToHex(b);
     }
 
@@ -64,7 +68,7 @@ jQuery(function($) {
         return lum < 0.5 ? '#f9fafb' : '#111827';
     }
 
-    // ---------- Shared dropdown helpers ----------
+    // ---------- Shared dropdown helpers (for mixer) ----------
 
     function closeAllDropdowns() {
         $('.pct-mix-dropdown, .pct-mix-range-dropdown').each(function() {
@@ -78,6 +82,31 @@ jQuery(function($) {
     $(document).on('click', function() {
         closeAllDropdowns();
     });
+
+    function filterPaintOptions($column, rangeId) {
+        var $dropdown = $column.find('.pct-mix-dropdown');
+        var $list     = $dropdown.find('.pct-mix-list');
+        var $options  = $list.find('.pct-mix-option');
+
+        if (!rangeId) {
+            // All ranges
+            $options.show();
+        } else {
+            $options.each(function() {
+                var $opt      = $(this);
+                var optRange  = String($opt.data('range') || '');
+                var shouldShow = (optRange === String(rangeId));
+                $opt.toggle(shouldShow);
+            });
+        }
+
+        // Reset current paint selection when range changes
+        $dropdown.find('.pct-mix-value').val('');
+        $dropdown.attr('data-hex', '');
+        $list.find('.pct-mix-option').removeClass('is-selected');
+        $dropdown.find('.pct-mix-trigger-label').text('Select a paint');
+        $dropdown.find('.pct-mix-trigger-swatch').css('background-color', 'transparent');
+    }
 
     // ---------- Paint dropdowns ----------
 
@@ -129,44 +158,14 @@ jQuery(function($) {
 
             closeAllDropdowns();
 
-            var $mixContainer   = $dropdown.closest('.pct-mix-container');
-            var $shadeContainer = $dropdown.closest('.pct-shade-container');
-
+            var $mixContainer = $dropdown.closest('.pct-mix-container');
             if ($mixContainer.length) {
                 updateMix($mixContainer);
-            }
-            if ($shadeContainer.length) {
-                updateShadeScale($shadeContainer);
             }
         });
     }
 
-    // ---------- Range dropdowns ----------
-
-    function filterPaintOptions($column, rangeId) {
-        var $dropdown = $column.find('.pct-mix-dropdown');
-        var $list     = $dropdown.find('.pct-mix-list');
-        var $options  = $list.find('.pct-mix-option');
-
-        if (!rangeId) {
-            // All ranges
-            $options.show();
-        } else {
-            $options.each(function() {
-                var $opt      = $(this);
-                var optRange  = String($opt.data('range') || '');
-                var shouldShow = (optRange === String(rangeId));
-                $opt.toggle(shouldShow);
-            });
-        }
-
-        // Reset current paint selection when range changes
-        $dropdown.find('.pct-mix-value').val('');
-        $dropdown.attr('data-hex', '');
-        $list.find('.pct-mix-option').removeClass('is-selected');
-        $dropdown.find('.pct-mix-trigger-label').text('Select a paint');
-        $dropdown.find('.pct-mix-trigger-swatch').css('background-color', 'transparent');
-    }
+    // ---------- Range dropdowns (mixer) ----------
 
     function initRangeDropdown($dropdown) {
         var $trigger = $dropdown.find('.pct-mix-trigger');
@@ -210,70 +209,65 @@ jQuery(function($) {
             var $column = $dropdown.closest('.pct-mix-column');
             filterPaintOptions($column, rangeId);
 
-            var $mixContainer   = $dropdown.closest('.pct-mix-container');
-            var $shadeContainer = $dropdown.closest('.pct-shade-container');
-
+            var $mixContainer = $dropdown.closest('.pct-mix-container');
             if ($mixContainer.length) {
                 updateMix($mixContainer);
-            }
-            if ($shadeContainer.length) {
-                updateShadeScale($shadeContainer);
             }
         });
     }
 
     // ---------- Mixing logic (two-paint mixer) ----------
-    
+
     function updateMix($container) {
         var $leftDropdown  = $container.find('.pct-mix-dropdown-left');
         var $rightDropdown = $container.find('.pct-mix-dropdown-right');
         var $leftParts     = $container.find('.pct-mix-parts-left');
         var $rightParts    = $container.find('.pct-mix-parts-right');
-    
+
         var hexLeft  = $leftDropdown.find('.pct-mix-value').val() || '';
         var hexRight = $rightDropdown.find('.pct-mix-value').val() || '';
-    
+
         var partsLeft  = parseInt($leftParts.val(), 10);
         var partsRight = parseInt($rightParts.val(), 10);
-    
+
         var $resultBlock  = $container.find('.pct-mix-result-block');
         var $resultHex    = $container.find('.pct-mix-result-hex');
         var $resultSwatch = $container.find('.pct-mix-result-swatch');
-    
+
         if (!$resultBlock.length) {
             return;
         }
-    
+
         // Hide the old circle swatch
         if ($resultSwatch.length) {
             $resultSwatch.hide();
         }
-    
+
         // If anything is missing/invalid, just hide the whole result row
         if (!hexLeft || !hexRight || !partsLeft || !partsRight ||
             partsLeft <= 0 || partsRight <= 0) {
-    
+
             $resultBlock.hide();
             return;
         }
-    
+
         var mixedHex = mixColors(hexLeft, hexRight, partsLeft, partsRight);
         if (!mixedHex) {
             $resultBlock.hide();
             return;
         }
-    
+
         mixedHex = mixedHex.toUpperCase();
-    
+
         if ($resultHex.length) {
             $resultHex.text(mixedHex);
         }
-    
+
         $resultBlock.css({
             'background-color': mixedHex,
             'color': textColorForHex(mixedHex)
         });
-    
+
         // Show once we have a valid result (as flex)
         $resultBlock.css('display', 'flex');
     }
@@ -300,323 +294,13 @@ jQuery(function($) {
         }
     });
 
-    // ---------- Shade range helper ----------
+    // ---------- Init all mixer dropdowns ----------
 
-    function updateShadeScale($container) {
-        var $shadeHelper = $container.find('.pct-shade-helper');
-        if (!$shadeHelper.length) {
-            return;
-        }
-
-        var $shadeColumn = $shadeHelper.find('.pct-mix-column-shade');
-        var $scale       = $shadeHelper.find('.pct-shade-scale');
-        if (!$shadeColumn.length || !$scale.length) {
-            return;
-        }
-
-        var $paintDropdown = $shadeColumn.find('.pct-mix-dropdown-shade');
-        var baseHex        = $paintDropdown.find('.pct-mix-value').val() || '';
-
-        if (!baseHex) {
-            $scale.html(
-                '<p class="pct-shade-empty">Select a paint to see lighter and darker mixes.</p>'
-            );
-            return;
-        }
-
-        var baseRgb = hexToRgb(baseHex);
-        if (!baseRgb) {
-            $scale.html(
-                '<p class="pct-shade-empty">This colour has an invalid hex value.</p>'
-            );
-            return;
-        }
-
-        // find the selected option for this base colour
-        var $selectedOption = $paintDropdown.find('.pct-mix-option.is-selected').first();
-        if (!$selectedOption.length) {
-            // Fallback: match by hex
-            $paintDropdown.find('.pct-mix-option').each(function () {
-                var $opt = $(this);
-                var optHex = ($opt.data('hex') || '').toString().toLowerCase();
-                if (optHex === baseHex.toString().toLowerCase()) {
-                    $selectedOption = $opt;
-                    return false; // break
-                }
-            });
-        }
-
-        if (!$selectedOption.length) {
-            $scale.html(
-                '<p class="pct-shade-empty">Could not determine the selected paint in this range.</p>'
-            );
-            return;
-        }
-
-        var baseRangeId = $selectedOption.data('range');
-        if (!baseRangeId && baseRangeId !== 0) {
-            $scale.html(
-                '<p class="pct-shade-empty">This paint is not assigned to a range.</p>'
-            );
-            return;
-        }
-
-        var baseLabel = $selectedOption.data('label') || '';
-
-        var darkest = null;
-        var lightest = null;
-
-        // Collect paints in the same range and find darkest/lightest anchors
-        $paintDropdown.find('.pct-mix-option').each(function () {
-            var $opt  = $(this);
-            var optHex = $opt.data('hex') || '';
-            var optRange = $opt.data('range');
-
-            if (!optHex || String(optRange) !== String(baseRangeId)) {
-                return;
-            }
-
-            // Skip the base colour itself when choosing anchors
-            if (optHex.toString().toLowerCase() === baseHex.toString().toLowerCase()) {
-                return;
-            }
-
-            var rgb = hexToRgb(optHex);
-            if (!rgb) {
-                return;
-            }
-
-            var lum = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
-            var label = $opt.data('label') || '';
-
-            if (!darkest || lum < darkest.lum) {
-                darkest = { hex: optHex, lum: lum, label: label };
-            }
-            if (!lightest || lum > lightest.lum) {
-                lightest = { hex: optHex, lum: lum, label: label };
-            }
-        });
-
-        if (!darkest && !lightest) {
-            $scale.html(
-                '<p class="pct-shade-empty">Not enough paints in this range to build a shade ladder.</p>'
-            );
-            return;
-        }
-
-        // Ratios: [partsBase, partsOther]
-        // Darkest at the top (more darkener), then approach base
-        var darkerRatios = [
-            [1, 3], // darkest: 1 base, 3 darkener
-            [1, 1],
-            [3, 1]  // closest to base: 3 base, 1 darkener
-        ];
-        // For lighter mixes: closest to base first after base, then lightest
-        var lighterRatios = [
-            [3, 1], // closest to base: 3 base, 1 lightener
-            [1, 1],
-            [1, 3]  // lightest: 1 base, 3 lightener
-        ];
-
-        var rows = [];
-
-        if (darkest) {
-            darkerRatios.forEach(function (pair) {
-                var mixed = mixColors(baseHex, darkest.hex, pair[0], pair[1]);
-                if (!mixed) {
-                    return;
-                }
-                rows.push({
-                    type: 'darker',
-                    ratio: pair,
-                    hex: mixed.toUpperCase(),
-                    otherLabel: darkest.label || ''
-                });
-            });
-        }
-
-        // Base in the centre
-        rows.push({
-            type: 'base',
-            ratio: null,
-            hex: baseHex.toUpperCase(),
-            baseLabel: baseLabel
-        });
-
-        if (lightest) {
-            lighterRatios.forEach(function (pair) {
-                var mixed = mixColors(baseHex, lightest.hex, pair[0], pair[1]);
-                if (!mixed) {
-                    return;
-                }
-                rows.push({
-                    type: 'lighter',
-                    ratio: pair,
-                    hex: mixed.toUpperCase(),
-                    otherLabel: lightest.label || ''
-                });
-            });
-        }
-
-        if (!rows.length) {
-            $scale.html(
-                '<p class="pct-shade-empty">Unable to generate mixes for this colour.</p>'
-            );
-            return;
-        }
-
-        var html = '';
-        rows.forEach(function (row) {
-            var mainText = '';
-            var textColor = textColorForHex(row.hex);
-
-            if (row.type === 'base') {
-                // Centre row: just the base paint name
-                mainText = row.baseLabel || '';
-            } else {
-                var otherLabel = row.otherLabel || '';
-                var partsBase  = row.ratio ? row.ratio[0] : 0;
-                var partsOther = row.ratio ? row.ratio[1] : 0;
-
-                if (otherLabel && baseLabel && partsBase && partsOther) {
-                    mainText = otherLabel + ' ' + partsOther + ' : ' + partsBase + ' ' + baseLabel;
-                } else {
-                    mainText = row.hex;
-                }
-            }
-
-            html += '<div class="pct-shade-row pct-shade-row-' + row.type +
-                    '" style="background-color:' + row.hex + ';color:' + textColor + ';">';
-            html += '  <div class="pct-shade-meta">';
-            html += '    <div class="pct-shade-ratio">' + mainText + '</div>';
-            html += '    <div class="pct-shade-hex">' + row.hex + '</div>';
-            html += '  </div>';
-            html += '</div>';
-        });
-
-        $scale.html(html);
-    }
-
-    // ---------- Init all dropdowns ----------
-
-    $('.pct-mix-dropdown').each(function() {
+    $('.pct-mix-container .pct-mix-dropdown').each(function() {
         initPaintDropdown($(this));
     });
 
-    $('.pct-mix-range-dropdown').each(function() {
+    $('.pct-mix-container .pct-mix-range-dropdown').each(function() {
         initRangeDropdown($(this));
-    });
-    
-    // ---------- Initialise shade helper with default hex (if provided) ----------
-
-    $('.pct-shade-container').each(function() {
-        var $container = $(this);
-        var defaultHex = ($container.data('default-shade-hex') || '').toString().trim();
-
-        // Always initialise the empty state at least once
-        if (!defaultHex) {
-            updateShadeScale($container);
-            return;
-        }
-
-        // Normalise the hex (# + lowercase)
-        if (defaultHex.charAt(0) !== '#') {
-            defaultHex = '#' + defaultHex;
-        }
-        var normDefault = defaultHex.toLowerCase();
-
-        var $shadeColumn   = $container.find('.pct-mix-column-shade');
-        if (!$shadeColumn.length) {
-            updateShadeScale($container);
-            return;
-        }
-
-        var $paintDropdown = $shadeColumn.find('.pct-mix-dropdown-shade');
-        var $options       = $paintDropdown.find('.pct-mix-option');
-        if (!$options.length) {
-            updateShadeScale($container);
-            return;
-        }
-
-        // Find matching paint option by hex
-        var $match = null;
-        $options.each(function () {
-            var hex = ($(this).data('hex') || '').toString().toLowerCase();
-            if (hex === normDefault) {
-                $match = $(this);
-                return false; // break
-            }
-        });
-
-        if (!$match) {
-            updateShadeScale($container);
-            return;
-        }
-
-        // Set the range dropdown based on the matched option
-        var rangeId        = $match.data('range') || '';
-        var $rangeDropdown = $shadeColumn.find('.pct-mix-range-dropdown-shade');
-
-        if ($rangeDropdown.length) {
-            var $rangeList   = $rangeDropdown.find('.pct-mix-list');
-            var $rangeHidden = $rangeDropdown.find('.pct-mix-range-value');
-            var $rangeLabel  = $rangeDropdown.find('.pct-mix-trigger-label');
-
-            $rangeList.find('.pct-mix-range-option').removeClass('is-selected');
-
-            var selector = '.pct-mix-range-option';
-            if (rangeId !== '') {
-                selector += '[data-range="' + String(rangeId) + '"]';
-            } else {
-                selector += '[data-range=""]';
-            }
-
-            var $rangeOpt = $rangeList.find(selector).first();
-            if ($rangeOpt.length) {
-                $rangeOpt.addClass('is-selected');
-                $rangeHidden.val(rangeId);
-                var rangeText = $rangeOpt.find('.pct-mix-option-label').text() || '';
-                if (rangeText) {
-                    $rangeLabel.text(rangeText);
-                }
-
-                // Filter paints by range (same as user picking a range)
-                filterPaintOptions($shadeColumn, rangeId);
-
-                // Re-find the matching paint after filtering
-                $options = $paintDropdown.find('.pct-mix-option');
-                $match   = null;
-                $options.each(function () {
-                    var hex = ($(this).data('hex') || '').toString().toLowerCase();
-                    if (hex === normDefault) {
-                        $match = $(this);
-                        return false;
-                    }
-                });
-            }
-        }
-
-        if ($match) {
-            var hexVal   = $match.data('hex') || defaultHex;
-            var label    = $match.data('label') || '';
-            var $hidden  = $paintDropdown.find('.pct-mix-value');
-            var $labelEl = $paintDropdown.find('.pct-mix-trigger-label');
-            var $swatch  = $paintDropdown.find('.pct-mix-trigger-swatch');
-
-            $paintDropdown.attr('data-hex', hexVal);
-            $hidden.val(hexVal);
-            $paintDropdown.find('.pct-mix-option').removeClass('is-selected');
-            $match.addClass('is-selected');
-
-            if (label) {
-                $labelEl.text(label);
-            }
-            if ($swatch.length) {
-                $swatch.css('background-color', hexVal);
-            }
-        }
-
-        // Finally, build the shade ladder for this colour
-        updateShadeScale($container);
     });
 });
