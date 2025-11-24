@@ -3,17 +3,78 @@
  * Frontend table template for Paint Tracker and Mixing Helper.
  *
  * Expects:
- * - $pct_paints      : array of [ 'name', 'number', 'hex', 'links' ]
- * - $pct_range_title : string (range name, e.g. "Vallejo Model Color")
- * - $pct_mixing_page_url : string (URL of page with [shade-helper])
+ * - $pct_paints              : array of [ 'name', 'number', 'hex', 'links' ]
+ * - $pct_range_title         : string (range name, e.g. "Vallejo Model Color")
+ * - $pct_mixing_page_url     : string (URL of page with [shade-helper])
+ * - $pct_table_display_mode  : string 'dots' or 'rows'
  */
 
 if ( ! isset( $pct_paints ) || ! is_array( $pct_paints ) || empty( $pct_paints ) ) {
     return;
 }
+
+// ---- Small helpers for row mode ----
+
+if ( ! function_exists( 'pct_hex_to_rgb_for_table' ) ) {
+    function pct_hex_to_rgb_for_table( $hex ) {
+        if ( ! $hex ) {
+            return null;
+        }
+        $hex = trim( (string) $hex );
+        $hex = ltrim( $hex, '#' );
+
+        if ( strlen( $hex ) === 3 ) {
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        }
+        if ( strlen( $hex ) !== 6 ) {
+            return null;
+        }
+
+        $int = hexdec( $hex );
+        if ( ! is_int( $int ) ) {
+            return null;
+        }
+
+        return [
+            'r' => ( $int >> 16 ) & 255,
+            'g' => ( $int >> 8 ) & 255,
+            'b' => $int & 255,
+        ];
+    }
+}
+
+if ( ! function_exists( 'pct_text_color_for_hex_for_table' ) ) {
+    function pct_text_color_for_hex_for_table( $hex ) {
+        $rgb = pct_hex_to_rgb_for_table( $hex );
+        if ( ! $rgb ) {
+            return '#111827';
+        }
+
+        $lum = ( 0.299 * $rgb['r'] + 0.587 * $rgb['g'] + 0.114 * $rgb['b'] ) / 255;
+        return ( $lum < 0.5 ) ? '#f9fafb' : '#111827';
+    }
+}
+
+// Determine mode (fallback to dots)
+$display_mode = isset( $pct_table_display_mode ) ? $pct_table_display_mode : 'dots';
+if ( 'rows' !== $display_mode ) {
+    $display_mode = 'dots';
+}
+
+// Build container classes
+$container_classes = [
+    'pct-table-container',
+    'pct-table-mode-' . $display_mode,
+];
+
+if ( 'rows' === $display_mode ) {
+    $container_classes[] = 'pct-row-highlight-mode';
+}
+
+$container_class_attr = implode( ' ', array_map( 'sanitize_html_class', $container_classes ) );
 ?>
 
-<div class="pct-table-container">
+<div class="<?php echo esc_attr( $container_class_attr ); ?>">
     <?php if ( ! empty( $pct_range_title ) ) : ?>
         <div class="pct-range-title">
             <?php echo esc_html( $pct_range_title ); ?>
@@ -24,7 +85,9 @@ if ( ! isset( $pct_paints ) || ! is_array( $pct_paints ) || empty( $pct_paints )
         <table class="pct-table">
             <thead>
                 <tr>
-                    <th class="pct-swatch-header" aria-hidden="true"></th>
+                    <?php if ( 'dots' === $display_mode ) : ?>
+                        <th class="pct-swatch-header" aria-hidden="true"></th>
+                    <?php endif; ?>
                     <th><?php esc_html_e( 'Colour', 'pct' ); ?></th>
                     <th><?php esc_html_e( 'Number', 'pct' ); ?></th>
                     <th class="pct-models-header"><?php esc_html_e( 'Models', 'pct' ); ?></th>
@@ -38,35 +101,67 @@ if ( ! isset( $pct_paints ) || ! is_array( $pct_paints ) || empty( $pct_paints )
                 $links  = isset( $paint['links'] )  && is_array( $paint['links'] )
                     ? $paint['links']
                     : [];
+
+                // Build shade helper URL if one is configured.
+                $shade_url = '';
+                if ( $hex && ! empty( $pct_mixing_page_url ) ) {
+                    // Drop any leading '#' so it doesn't become a fragment.
+                    $param_hex = ltrim( $hex, '#' );
+
+                    // Let WordPress build the query string properly.
+                    $shade_url = add_query_arg(
+                        'pct_shade_hex',
+                        $param_hex,
+                        $pct_mixing_page_url
+                    );
+                }
+
+                $row_style   = '';
+                $row_classes = [];
+
+                if ( 'rows' === $display_mode && $hex ) {
+                    $bg_color   = $hex;
+                    $text_color = pct_text_color_for_hex_for_table( $hex );
+                    $row_style  = sprintf(
+                        'background-color:%1$s; color:%2$s;',
+                        $bg_color,
+                        $text_color
+                    );
+                }
+
+                // Make entire row clickable in row-highlight mode when we have a shade URL.
+                $row_data_attr = '';
+                if ( 'rows' === $display_mode && $shade_url ) {
+                    $row_classes[] = 'pct-row-clickable';
+                    $row_data_attr = ' data-shade-url="' . esc_url( $shade_url ) . '"';
+                }
+
+                $class_attr = '';
+                if ( ! empty( $row_classes ) ) {
+                    $class_attr = ' class="' . esc_attr( implode( ' ', $row_classes ) ) . '"';
+                }
+
+                $style_attr = '';
+                if ( $row_style ) {
+                    $style_attr = ' style="' . esc_attr( $row_style ) . '"';
+                }
                 ?>
-                <tr>
-                    <td class="pct-swatch-cell">
-                        <?php if ( $hex ) : ?>
-                            <?php
-                            // Build shade helper URL if one is configured.
-                            $shade_url = '';
-                            if ( ! empty( $pct_mixing_page_url ) ) {
-                                // Drop any leading '#' so it doesn't become a fragment.
-                                $param_hex = ltrim( $hex, '#' );
-                    
-                                // Let WordPress build the query string properly.
-                                $shade_url = add_query_arg(
-                                    'pct_shade_hex',
-                                    $param_hex,
-                                    $pct_mixing_page_url
-                                );
-                            }
-                            ?>
-                    
-                            <?php if ( $shade_url ) : ?>
-                                <a href="<?php echo esc_url( $shade_url ); ?>" class="pct-swatch-link">
+                <tr<?php echo $class_attr . $style_attr . $row_data_attr; ?>>
+                    <?php if ( 'dots' === $display_mode ) : ?>
+                        <td class="pct-swatch-cell">
+                            <?php if ( $hex ) : ?>
+
+                                <?php if ( $shade_url ) : ?>
+                                    <a href="<?php echo esc_url( $shade_url ); ?>" class="pct-swatch-link">
+                                        <span class="pct-swatch" style="background-color: <?php echo esc_attr( $hex ); ?>"></span>
+                                    </a>
+                                <?php else : ?>
                                     <span class="pct-swatch" style="background-color: <?php echo esc_attr( $hex ); ?>"></span>
-                                </a>
-                            <?php else : ?>
-                                <span class="pct-swatch" style="background-color: <?php echo esc_attr( $hex ); ?>"></span>
+                                <?php endif; ?>
                             <?php endif; ?>
-                        <?php endif; ?>
-                    </td>
+                        </td>
+                    <?php endif; ?>
+
                     <td class="pct-name-cell">
                         <span class="pct-name"><?php echo esc_html( $name ); ?></span>
                     </td>
@@ -112,3 +207,24 @@ if ( ! isset( $pct_paints ) || ! is_array( $pct_paints ) || empty( $pct_paints )
         </table>
     </div>
 </div>
+
+<?php if ( 'rows' === $display_mode && ! empty( $pct_mixing_page_url ) ) : ?>
+<script>
+document.addEventListener('click', function (event) {
+    // Ignore clicks on links or form controls so normal behaviour still works.
+    if (event.target.closest('a, button, input, select, textarea')) {
+        return;
+    }
+
+    var row = event.target.closest('tr[data-shade-url]');
+    if (!row) {
+        return;
+    }
+
+    var url = row.getAttribute('data-shade-url');
+    if (url) {
+        window.location.href = url;
+    }
+});
+</script>
+<?php endif; ?>
