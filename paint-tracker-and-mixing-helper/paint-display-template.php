@@ -5,6 +5,7 @@
  * Expects:
  * - $pct_paints      : array of [ 'name', 'number', 'hex', 'links' ]
  * - $pct_range_title : string (range name, e.g. "Vallejo Model Color")
+ * - $pct_mixing_page_url : string (URL of page with [shade-helper])
  */
 
 if ( ! isset( $pct_paints ) || ! is_array( $pct_paints ) || empty( $pct_paints ) ) {
@@ -40,30 +41,31 @@ if ( ! isset( $pct_paints ) || ! is_array( $pct_paints ) || empty( $pct_paints )
                 ?>
                 <tr>
                     <td class="pct-swatch-cell">
-                        <?php
-                        if ( $hex ) :
-                            // Build link to mixing page (if configured), passing the hex as pct_shade_hex
-                            $swatch_url = '';
-                    
+                        <?php if ( $hex ) : ?>
+                            <?php
+                            // Build shade helper URL if one is configured.
+                            $shade_url = '';
                             if ( ! empty( $pct_mixing_page_url ) ) {
-                                $swatch_url = add_query_arg(
+                                // Drop any leading '#' so it doesn't become a fragment.
+                                $param_hex = ltrim( $hex, '#' );
+                    
+                                // Let WordPress build the query string properly.
+                                $shade_url = add_query_arg(
                                     'pct_shade_hex',
-                                    $hex,
+                                    $param_hex,
                                     $pct_mixing_page_url
                                 );
                             }
+                            ?>
                     
-                            if ( $swatch_url ) :
-                                ?>
-                                <a href="<?php echo esc_url( $swatch_url ); ?>" class="pct-swatch-link">
+                            <?php if ( $shade_url ) : ?>
+                                <a href="<?php echo esc_url( $shade_url ); ?>" class="pct-swatch-link">
                                     <span class="pct-swatch" style="background-color: <?php echo esc_attr( $hex ); ?>"></span>
                                 </a>
                             <?php else : ?>
                                 <span class="pct-swatch" style="background-color: <?php echo esc_attr( $hex ); ?>"></span>
-                            <?php
-                            endif;
-                        endif;
-                        ?>
+                            <?php endif; ?>
+                        <?php endif; ?>
                     </td>
                     <td class="pct-name-cell">
                         <span class="pct-name"><?php echo esc_html( $name ); ?></span>
@@ -85,7 +87,6 @@ if ( ! isset( $pct_paints ) || ! is_array( $pct_paints ) || empty( $pct_paints )
                                     continue;
                                 }
 
-                                // Fallback title if none set
                                 if ( '' === $ltitle ) {
                                     $ltitle = ( $total_links > 1 )
                                         ? sprintf( __( 'View %d', 'pct' ), $i + 1 )
