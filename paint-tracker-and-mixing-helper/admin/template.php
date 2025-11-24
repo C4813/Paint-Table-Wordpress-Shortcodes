@@ -161,7 +161,52 @@ elseif ( 'import_page' === $pct_admin_view ) : ?>
     </div>
 
 <?php
+elseif ( 'info_settings' === $pct_admin_view ) : ?>
+
+    <div class="wrap">
+        <h1><?php esc_html_e( 'Info & Settings', 'pct' ); ?></h1>
+
+        <?php
+        $message = isset( $pct_info_message ) ? $pct_info_message : '';
+        $info_url = isset( $pct_info_url ) ? $pct_info_url : '';
+
+        if ( $message ) : ?>
+            <div class="notice notice-success is-dismissible">
+                <p><?php echo esc_html( $message ); ?></p>
+            </div>
+        <?php endif; ?>
+
+        <p><?php esc_html_e( 'Details to come.', 'pct' ); ?></p>
+
+        <form method="post">
+            <?php wp_nonce_field( 'pct_info_settings', 'pct_info_settings_nonce' ); ?>
+
+            <table class="form-table" role="presentation">
+                <tr>
+                    <th scope="row">
+                        <label for="pct_mixing_page_url"><?php esc_html_e( 'Mixing page URL', 'pct' ); ?></label>
+                    </th>
+                    <td>
+                        <input type="url"
+                               name="pct_mixing_page_url"
+                               id="pct_mixing_page_url"
+                               class="regular-text"
+                               value="<?php echo esc_attr( $info_url ); ?>"
+                               placeholder="https://example.com/mixing-helper">
+                        <p class="description">
+                            <?php esc_html_e( 'Enter the URL of the page where you are using the [mixing-helper] shortcode. This is used when clicking a paint from the [paint_table] shortcode.', 'pct' ); ?>
+                        </p>
+                    </td>
+                </tr>
+            </table>
+
+            <?php submit_button( __( 'Save settings', 'pct' ), 'primary', 'pct_info_settings_submit' ); ?>
+        </form>
+    </div>
+
+<?php
 elseif ( 'export_page' === $pct_admin_view ) : ?>
+
 
     <div class="wrap">
         <h1><?php esc_html_e( 'Export Paints to CSV', 'pct' ); ?></h1>
