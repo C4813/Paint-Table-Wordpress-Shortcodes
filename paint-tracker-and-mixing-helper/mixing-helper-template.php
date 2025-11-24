@@ -1,6 +1,6 @@
 <?php
 /**
- * Frontend template for [mixing_helper].
+ * Frontend template for [mixing-helper].
  *
  * Expects:
  * - $pct_ranges : array of WP_Term (paint ranges)
@@ -11,83 +11,10 @@
 if ( ! isset( $pct_ranges, $pct_paints ) || empty( $pct_ranges ) || empty( $pct_paints ) ) {
     return;
 }
-
-$default_shade_hex = isset( $pct_default_shade_hex ) ? $pct_default_shade_hex : '';
 ?>
-
-<!-- ========== SHADE RANGE HELPER (SEPARATE TOOL) ========== -->
-<div class="pct-shade-container" data-default-shade-hex="<?php echo esc_attr( $default_shade_hex ); ?>">
-    <div class="pct-shade-helper">
-        <div class="pct-shade-header">
-            <?php esc_html_e( 'Shade range helper', 'pct' ); ?>
-        </div>
-
-        <div class="pct-shade-controls">
-            <div class="pct-mix-column pct-mix-column-shade">
-                <!-- Range dropdown -->
-                <div class="pct-mix-field">
-                    <label>
-                        <?php esc_html_e( 'Range', 'pct' ); ?><br>
-                        <div class="pct-mix-range-dropdown pct-mix-range-dropdown-shade">
-                            <button type="button" class="pct-mix-trigger">
-                                <span class="pct-mix-trigger-label">
-                                    <?php esc_html_e( 'All', 'pct' ); ?>
-                                </span>
-                                <span class="pct-mix-trigger-caret">&#9662;</span>
-                            </button>
-                            <input type="hidden" class="pct-mix-range-value" value="">
-                            <div class="pct-mix-list" hidden>
-                                <div class="pct-mix-range-option" data-range="">
-                                    <span class="pct-mix-option-label">
-                                        <?php esc_html_e( 'All', 'pct' ); ?>
-                                    </span>
-                                </div>
-                                <?php foreach ( $pct_ranges as $range ) : ?>
-                                    <div class="pct-mix-range-option"
-                                         data-range="<?php echo esc_attr( $range->term_id ); ?>">
-                                        <span class="pct-mix-option-label">
-                                            <?php echo esc_html( $range->name ); ?>
-                                        </span>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                    </label>
-                </div>
-
-                <!-- Paint dropdown -->
-                <div class="pct-mix-field">
-                    <label>
-                        <?php esc_html_e( 'Paint', 'pct' ); ?><br>
-                        <div class="pct-mix-dropdown pct-mix-dropdown-shade">
-                            <button type="button" class="pct-mix-trigger">
-                                <span class="pct-mix-trigger-swatch"></span>
-                                <span class="pct-mix-trigger-label">
-                                    <?php esc_html_e( 'Select a paint', 'pct' ); ?>
-                                </span>
-                                <span class="pct-mix-trigger-caret">&#9662;</span>
-                            </button>
-                            <input type="hidden" class="pct-mix-value" value="">
-                            <div class="pct-mix-list" hidden>
-                                <?php PCT_Paint_Table_Plugin::render_mix_paint_options( $pct_paints ); ?>
-                            </div>
-                        </div>
-                    </label>
-                </div>
-            </div>
-
-            <div class="pct-shade-scale" aria-live="polite">
-                <p class="pct-shade-empty">
-                    <?php esc_html_e( 'Select a paint to see lighter and darker mixes.', 'pct' ); ?>
-                </p>
-            </div>
-        </div>
-    </div>
-</div><!-- /.pct-shade-container -->
 
 <!-- ========== MAIN TWO-PAINT MIXER ========== -->
 <div class="pct-mix-container">
-
     <div class="pct-mix-header">
         <?php esc_html_e( 'Mixing helper', 'pct' ); ?>
     </div>
@@ -119,7 +46,7 @@ $default_shade_hex = isset( $pct_default_shade_hex ) ? $pct_default_shade_hex : 
                             </div>
                             <?php foreach ( $pct_ranges as $range ) : ?>
                                 <div class="pct-mix-range-option"
-                                     data-range="<?php echo esc_attr( $range->term_id ); ?>">
+                                    data-range="<?php echo esc_attr( $range->term_id ); ?>">
                                     <span class="pct-mix-option-label">
                                         <?php echo esc_html( $range->name ); ?>
                                     </span>
@@ -154,10 +81,10 @@ $default_shade_hex = isset( $pct_default_shade_hex ) ? $pct_default_shade_hex : 
                 <label>
                     <?php esc_html_e( 'Parts', 'pct' ); ?><br>
                     <input type="number"
-                           class="pct-mix-parts pct-mix-parts-left"
-                           min="1"
-                           step="1"
-                           value="1">
+                        class="pct-mix-parts pct-mix-parts-left"
+                        min="1"
+                        step="1"
+                        value="1">
                 </label>
             </div>
         </div>
@@ -188,7 +115,7 @@ $default_shade_hex = isset( $pct_default_shade_hex ) ? $pct_default_shade_hex : 
                             </div>
                             <?php foreach ( $pct_ranges as $range ) : ?>
                                 <div class="pct-mix-range-option"
-                                     data-range="<?php echo esc_attr( $range->term_id ); ?>">
+                                    data-range="<?php echo esc_attr( $range->term_id ); ?>">
                                     <span class="pct-mix-option-label">
                                         <?php echo esc_html( $range->name ); ?>
                                     </span>
@@ -223,10 +150,10 @@ $default_shade_hex = isset( $pct_default_shade_hex ) ? $pct_default_shade_hex : 
                 <label>
                     <?php esc_html_e( 'Parts', 'pct' ); ?><br>
                     <input type="number"
-                           class="pct-mix-parts pct-mix-parts-right"
-                           min="1"
-                           step="1"
-                           value="1">
+                        class="pct-mix-parts pct-mix-parts-right"
+                        min="1"
+                        step="1"
+                        value="1">
                 </label>
             </div>
         </div>
