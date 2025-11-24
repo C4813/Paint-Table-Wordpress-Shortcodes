@@ -506,4 +506,117 @@ jQuery(function($) {
     $('.pct-mix-range-dropdown').each(function() {
         initRangeDropdown($(this));
     });
+    
+    // ---------- Initialise shade helper with default hex (if provided) ----------
+
+    $('.pct-shade-container').each(function() {
+        var $container = $(this);
+        var defaultHex = ($container.data('default-shade-hex') || '').toString().trim();
+
+        // Always initialise the empty state at least once
+        if (!defaultHex) {
+            updateShadeScale($container);
+            return;
+        }
+
+        // Normalise the hex (# + lowercase)
+        if (defaultHex.charAt(0) !== '#') {
+            defaultHex = '#' + defaultHex;
+        }
+        var normDefault = defaultHex.toLowerCase();
+
+        var $shadeColumn   = $container.find('.pct-mix-column-shade');
+        if (!$shadeColumn.length) {
+            updateShadeScale($container);
+            return;
+        }
+
+        var $paintDropdown = $shadeColumn.find('.pct-mix-dropdown-shade');
+        var $options       = $paintDropdown.find('.pct-mix-option');
+        if (!$options.length) {
+            updateShadeScale($container);
+            return;
+        }
+
+        // Find matching paint option by hex
+        var $match = null;
+        $options.each(function () {
+            var hex = ($(this).data('hex') || '').toString().toLowerCase();
+            if (hex === normDefault) {
+                $match = $(this);
+                return false; // break
+            }
+        });
+
+        if (!$match) {
+            updateShadeScale($container);
+            return;
+        }
+
+        // Set the range dropdown based on the matched option
+        var rangeId        = $match.data('range') || '';
+        var $rangeDropdown = $shadeColumn.find('.pct-mix-range-dropdown-shade');
+
+        if ($rangeDropdown.length) {
+            var $rangeList   = $rangeDropdown.find('.pct-mix-list');
+            var $rangeHidden = $rangeDropdown.find('.pct-mix-range-value');
+            var $rangeLabel  = $rangeDropdown.find('.pct-mix-trigger-label');
+
+            $rangeList.find('.pct-mix-range-option').removeClass('is-selected');
+
+            var selector = '.pct-mix-range-option';
+            if (rangeId !== '') {
+                selector += '[data-range="' + String(rangeId) + '"]';
+            } else {
+                selector += '[data-range=""]';
+            }
+
+            var $rangeOpt = $rangeList.find(selector).first();
+            if ($rangeOpt.length) {
+                $rangeOpt.addClass('is-selected');
+                $rangeHidden.val(rangeId);
+                var rangeText = $rangeOpt.find('.pct-mix-option-label').text() || '';
+                if (rangeText) {
+                    $rangeLabel.text(rangeText);
+                }
+
+                // Filter paints by range (same as user picking a range)
+                filterPaintOptions($shadeColumn, rangeId);
+
+                // Re-find the matching paint after filtering
+                $options = $paintDropdown.find('.pct-mix-option');
+                $match   = null;
+                $options.each(function () {
+                    var hex = ($(this).data('hex') || '').toString().toLowerCase();
+                    if (hex === normDefault) {
+                        $match = $(this);
+                        return false;
+                    }
+                });
+            }
+        }
+
+        if ($match) {
+            var hexVal   = $match.data('hex') || defaultHex;
+            var label    = $match.data('label') || '';
+            var $hidden  = $paintDropdown.find('.pct-mix-value');
+            var $labelEl = $paintDropdown.find('.pct-mix-trigger-label');
+            var $swatch  = $paintDropdown.find('.pct-mix-trigger-swatch');
+
+            $paintDropdown.attr('data-hex', hexVal);
+            $hidden.val(hexVal);
+            $paintDropdown.find('.pct-mix-option').removeClass('is-selected');
+            $match.addClass('is-selected');
+
+            if (label) {
+                $labelEl.text(label);
+            }
+            if ($swatch.length) {
+                $swatch.css('background-color', hexVal);
+            }
+        }
+
+        // Finally, build the shade ladder for this colour
+        updateShadeScale($container);
+    });
 });
