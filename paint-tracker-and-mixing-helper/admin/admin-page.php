@@ -177,7 +177,110 @@ elseif ( 'info_settings' === $pct_admin_view ) : ?>
             </div>
         <?php endif; ?>
 
-        <p><?php esc_html_e( 'Details to come.', 'pct' ); ?></p>
+        <h2><?php esc_html_e( 'What this plugin does', 'pct' ); ?></h2>
+        <p>
+            <?php esc_html_e( 'Paint Tracker and Mixing Helper helps you keep a structured list of your miniature paints, track which ones you currently own, link each paint to useful resources, and provide interactive colour tools on the front end.', 'pct' ); ?>
+        </p>
+
+        <h2><?php esc_html_e( 'How the data is stored', 'pct' ); ?></h2>
+        <p>
+            <?php esc_html_e( 'The plugin adds a custom post type called “Paint Colours” and a taxonomy called “Paint Ranges”.', 'pct' ); ?>
+        </p>
+        <ul>
+            <li>
+                <strong><?php esc_html_e( 'Paint Colours', 'pct' ); ?></strong>
+                – <?php esc_html_e( 'each paint has a name (title), a paint number, a hex colour, an “On the shelf” flag, and optional links (tutorials, reviews, example builds, etc.).', 'pct' ); ?>
+            </li>
+            <li>
+                <strong><?php esc_html_e( 'Paint Ranges', 'pct' ); ?></strong>
+                – <?php esc_html_e( 'group paints into ranges such as Vallejo Model Color, Vallejo Game Color, and so on.', 'pct' ); ?>
+            </li>
+        </ul>
+
+        <h2><?php esc_html_e( 'Shortcodes', 'pct' ); ?></h2>
+
+        <h3><?php esc_html_e( '[paint_table]', 'pct' ); ?></h3>
+        <p>
+            <?php esc_html_e( 'Displays a table of paints, optionally filtered to a single paint range.', 'pct' ); ?>
+        </p>
+        <p><strong><?php esc_html_e( 'Attributes:', 'pct' ); ?></strong></p>
+        <ul>
+            <li><code>range</code> – <?php esc_html_e( 'taxonomy slug of the paint range (optional).', 'pct' ); ?></li>
+            <li><code>limit</code> – <?php esc_html_e( 'number of paints to show (-1 shows all).', 'pct' ); ?></li>
+            <li><code>orderby</code> – <?php esc_html_e( 'either "meta_number" (paint number) or "title".', 'pct' ); ?></li>
+            <li><code>shelf</code> – <?php esc_html_e( '"yes" to show only paints marked as on shelf, or "any" to show all paints.', 'pct' ); ?></li>
+        </ul>
+        <p>
+            <strong><?php esc_html_e( 'Example:', 'pct' ); ?></strong>
+            <br>
+            <code>[paint_table range="vallejo-model-color" limit="-1" orderby="meta_number" shelf="any"]</code>
+        </p>
+        <p>
+            <?php esc_html_e( 'If you set the Shading page URL below, clicking a colour swatch in this table will open your Shade helper page with that colour pre-selected.', 'pct' ); ?>
+        </p>
+
+        <h3><?php esc_html_e( '[mixing-helper]', 'pct' ); ?></h3>
+        <p>
+            <?php esc_html_e( 'Shows the two-paint mixing tool. You can pick two paints, set how many parts of each to mix, and see the resulting colour and hex value.', 'pct' ); ?>
+        </p>
+        <p>
+            <?php esc_html_e( 'Each paint dropdown can be filtered by range so you can quickly find the colours you want to mix.', 'pct' ); ?>
+        </p>
+
+        <h3><?php esc_html_e( '[shade-helper]', 'pct' ); ?></h3>
+        <p>
+            <?php esc_html_e( 'Shows the shade helper as a standalone tool. Choose a paint and the plugin will look for the darkest and lightest paints in the same range, then build a small ladder of lighter and darker mixes using those anchor colours.', 'pct' ); ?>
+        </p>
+        <p>
+            <?php esc_html_e( 'If a visitor arrives from the paint table by clicking a swatch, the shade helper can start with that colour already selected.', 'pct' ); ?>
+        </p>
+
+        <h2><?php esc_html_e( 'Importing paints from CSV', 'pct' ); ?></h2>
+        <p>
+            <?php esc_html_e( 'Under “Paint Colours → Import from CSV” you can bulk-create paints from a CSV file.', 'pct' ); ?>
+        </p>
+        <ul>
+            <li><?php esc_html_e( 'Choose the paint range that the new paints should be assigned to.', 'pct' ); ?></li>
+            <li><?php esc_html_e( 'Upload a CSV file with one paint per row.', 'pct' ); ?></li>
+        </ul>
+        <p><strong><?php esc_html_e( 'Expected columns (per row):', 'pct' ); ?></strong></p>
+        <ul>
+            <li><?php esc_html_e( 'title – paint name', 'pct' ); ?></li>
+            <li><?php esc_html_e( 'number – paint number (optional)', 'pct' ); ?></li>
+            <li><?php esc_html_e( 'hex – hex colour, e.g. #2f353a or 2f353a', 'pct' ); ?></li>
+            <li><?php esc_html_e( 'on_shelf – 0 or 1 (optional)', 'pct' ); ?></li>
+        </ul>
+        <p>
+            <?php esc_html_e( 'An optional header row with column names (title, number, hex, on_shelf) is supported and will be detected automatically.', 'pct' ); ?>
+        </p>
+
+        <h2><?php esc_html_e( 'Exporting paints to CSV', 'pct' ); ?></h2>
+        <p>
+            <?php esc_html_e( 'Under “Paint Colours → Export to CSV” you can download your paint collection as a CSV file.', 'pct' ); ?>
+        </p>
+        <ul>
+            <li><?php esc_html_e( 'Filter by paint range.', 'pct' ); ?></li>
+            <li><?php esc_html_e( 'Optionally limit the export to paints marked as on shelf.', 'pct' ); ?></li>
+        </ul>
+        <p><strong><?php esc_html_e( 'Exported columns:', 'pct' ); ?></strong></p>
+        <ul>
+            <li><?php esc_html_e( 'title – paint name', 'pct' ); ?></li>
+            <li><?php esc_html_e( 'number – paint number', 'pct' ); ?></li>
+            <li><?php esc_html_e( 'hex – hex colour', 'pct' ); ?></li>
+            <li><?php esc_html_e( 'on_shelf – 0 or 1', 'pct' ); ?></li>
+            <li><?php esc_html_e( 'ranges – list of range names (pipe-separated if more than one).', 'pct' ); ?></li>
+        </ul>
+
+        <h2><?php esc_html_e( 'Shading page URL', 'pct' ); ?></h2>
+        <p>
+            <?php esc_html_e( 'The setting below tells the plugin where your Shade helper page lives. This should be the URL of the page where you are using the [shade-helper] shortcode.', 'pct' ); ?>
+        </p>
+        <p>
+            <?php esc_html_e( 'When this URL is set, the colour swatches in your [paint_table] output become links. Clicking a swatch will take the visitor to your Shade helper page and automatically pass the clicked colour so that the ladder is built around that paint.', 'pct' ); ?>
+        </p>
+        <p>
+            <?php esc_html_e( 'If you leave this field empty, the swatches remain as simple colour indicators and are not clickable.', 'pct' ); ?>
+        </p>
 
         <form method="post">
             <?php wp_nonce_field( 'pct_info_settings', 'pct_info_settings_nonce' ); ?>
