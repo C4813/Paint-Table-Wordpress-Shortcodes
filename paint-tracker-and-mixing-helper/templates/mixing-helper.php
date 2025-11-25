@@ -16,24 +16,24 @@ if ( ! isset( $pct_ranges, $pct_paints ) || empty( $pct_ranges ) || empty( $pct_
 <!-- ========== MAIN TWO-PAINT MIXER ========== -->
 <div class="pct-mix-container">
     <div class="pct-mix-header">
-        <?php esc_html_e( 'Mixing helper', 'pct' ); ?>
+        <?php esc_html_e( 'Mixing helper', 'paint-tracker-and-mixing-helper' ); ?>
     </div>
 
     <div class="pct-mix-row">
         <!-- Left column -->
         <div class="pct-mix-column pct-mix-column-left">
             <div class="pct-mix-field">
-                <label><strong><?php esc_html_e( 'Paint 1', 'pct' ); ?></strong></label>
+                <label><strong><?php esc_html_e( 'Paint 1', 'paint-tracker-and-mixing-helper' ); ?></strong></label>
             </div>
 
             <!-- Range dropdown (custom) -->
             <div class="pct-mix-field">
                 <label>
-                    <?php esc_html_e( 'Range', 'pct' ); ?><br>
+                    <?php esc_html_e( 'Range', 'paint-tracker-and-mixing-helper' ); ?><br>
                     <div class="pct-mix-range-dropdown pct-mix-range-dropdown-left">
                         <button type="button" class="pct-mix-trigger">
                             <span class="pct-mix-trigger-label">
-                                <?php esc_html_e( 'All', 'pct' ); ?>
+                                <?php esc_html_e( 'All', 'paint-tracker-and-mixing-helper' ); ?>
                             </span>
                             <span class="pct-mix-trigger-caret">&#9662;</span>
                         </button>
@@ -41,7 +41,7 @@ if ( ! isset( $pct_ranges, $pct_paints ) || empty( $pct_ranges ) || empty( $pct_
                         <div class="pct-mix-list" hidden>
                             <div class="pct-mix-range-option" data-range="">
                                 <span class="pct-mix-option-label">
-                                    <?php esc_html_e( 'All', 'pct' ); ?>
+                                    <?php esc_html_e( 'All', 'paint-tracker-and-mixing-helper' ); ?>
                                 </span>
                             </div>
                             <?php foreach ( $pct_ranges as $range ) : ?>
@@ -60,12 +60,12 @@ if ( ! isset( $pct_ranges, $pct_paints ) || empty( $pct_ranges ) || empty( $pct_
             <!-- Paint dropdown (custom) -->
             <div class="pct-mix-field">
                 <label>
-                    <?php esc_html_e( 'Paint', 'pct' ); ?><br>
+                    <?php esc_html_e( 'Paint', 'paint-tracker-and-mixing-helper' ); ?><br>
                     <div class="pct-mix-dropdown pct-mix-dropdown-left">
                         <button type="button" class="pct-mix-trigger">
                             <span class="pct-mix-trigger-swatch"></span>
                             <span class="pct-mix-trigger-label">
-                                <?php esc_html_e( 'Select a paint', 'pct' ); ?>
+                                <?php esc_html_e( 'Select a paint', 'paint-tracker-and-mixing-helper' ); ?>
                             </span>
                             <span class="pct-mix-trigger-caret">&#9662;</span>
                         </button>
@@ -79,7 +79,7 @@ if ( ! isset( $pct_ranges, $pct_paints ) || empty( $pct_ranges ) || empty( $pct_
 
             <div class="pct-mix-field">
                 <label>
-                    <?php esc_html_e( 'Parts', 'pct' ); ?><br>
+                    <?php esc_html_e( 'Parts', 'paint-tracker-and-mixing-helper' ); ?><br>
                     <input type="number"
                         class="pct-mix-parts pct-mix-parts-left"
                         min="1"
@@ -92,17 +92,17 @@ if ( ! isset( $pct_ranges, $pct_paints ) || empty( $pct_ranges ) || empty( $pct_
         <!-- Right column -->
         <div class="pct-mix-column pct-mix-column-right">
             <div class="pct-mix-field">
-                <label><strong><?php esc_html_e( 'Paint 2', 'pct' ); ?></strong></label>
+                <label><strong><?php esc_html_e( 'Paint 2', 'paint-tracker-and-mixing-helper' ); ?></strong></label>
             </div>
 
             <!-- Range dropdown (custom) -->
             <div class="pct-mix-field">
                 <label>
-                    <?php esc_html_e( 'Range', 'pct' ); ?><br>
+                    <?php esc_html_e( 'Range', 'paint-tracker-and-mixing-helper' ); ?><br>
                     <div class="pct-mix-range-dropdown pct-mix-range-dropdown-right">
                         <button type="button" class="pct-mix-trigger">
                             <span class="pct-mix-trigger-label">
-                                <?php esc_html_e( 'All', 'pct' ); ?>
+                                <?php esc_html_e( 'All', 'paint-tracker-and-mixing-helper' ); ?>
                             </span>
                             <span class="pct-mix-trigger-caret">&#9662;</span>
                         </button>
@@ -110,7 +110,7 @@ if ( ! isset( $pct_ranges, $pct_paints ) || empty( $pct_ranges ) || empty( $pct_
                         <div class="pct-mix-list" hidden>
                             <div class="pct-mix-range-option" data-range="">
                                 <span class="pct-mix-option-label">
-                                    <?php esc_html_e( 'All', 'pct' ); ?>
+                                    <?php esc_html_e( 'All', 'paint-tracker-and-mixing-helper' ); ?>
                                 </span>
                             </div>
                             <?php foreach ( $pct_ranges as $range ) : ?>
@@ -129,12 +129,12 @@ if ( ! isset( $pct_ranges, $pct_paints ) || empty( $pct_ranges ) || empty( $pct_
             <!-- Paint dropdown (custom) -->
             <div class="pct-mix-field">
                 <label>
-                    <?php esc_html_e( 'Paint', 'pct' ); ?><br>
+                    <?php esc_html_e( 'Paint', 'paint-tracker-and-mixing-helper' ); ?><br>
                     <div class="pct-mix-dropdown pct-mix-dropdown-right">
                         <button type="button" class="pct-mix-trigger">
                             <span class="pct-mix-trigger-swatch"></span>
                             <span class="pct-mix-trigger-label">
-                                <?php esc_html_e( 'Select a paint', 'pct' ); ?>
+                                <?php esc_html_e( 'Select a paint', 'paint-tracker-and-mixing-helper' ); ?>
                             </span>
                             <span class="pct-mix-trigger-caret">&#9662;</span>
                         </button>
@@ -148,7 +148,7 @@ if ( ! isset( $pct_ranges, $pct_paints ) || empty( $pct_ranges ) || empty( $pct_
 
             <div class="pct-mix-field">
                 <label>
-                    <?php esc_html_e( 'Parts', 'pct' ); ?><br>
+                    <?php esc_html_e( 'Parts', 'paint-tracker-and-mixing-helper' ); ?><br>
                     <input type="number"
                         class="pct-mix-parts pct-mix-parts-right"
                         min="1"
@@ -162,7 +162,7 @@ if ( ! isset( $pct_ranges, $pct_paints ) || empty( $pct_ranges ) || empty( $pct_
     <div class="pct-mix-result-block pct-shade-row pct-shade-row-base">
         <div class="pct-shade-meta">
             <div class="pct-shade-ratio pct-mix-result-label">
-                <?php esc_html_e( 'Result', 'pct' ); ?>
+                <?php esc_html_e( 'Result', 'paint-tracker-and-mixing-helper' ); ?>
             </div>
             <div class="pct-shade-hex pct-mix-result-hex">
                 #FFFFFF
