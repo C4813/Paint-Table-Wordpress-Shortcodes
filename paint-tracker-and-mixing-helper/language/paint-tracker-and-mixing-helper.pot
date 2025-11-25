@@ -1,0 +1,384 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Paint Tracker and Mixing Helper 0.6.3\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-11-25 00:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: \n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: ChatGPT\n"
+"X-Domain: paint-tracker-and-mixing-helper\n"
+
+msgid "Paint Colours"
+msgstr ""
+
+msgid "Paint Colour"
+msgstr ""
+
+msgid "Add New Paint Colour"
+msgstr ""
+
+msgid "Edit Paint Colour"
+msgstr ""
+
+msgid "Paint Ranges"
+msgstr ""
+
+msgid "Paint Range"
+msgstr ""
+
+msgid "Paint Details"
+msgstr ""
+
+msgid "Number"
+msgstr ""
+
+msgid "Hex"
+msgstr ""
+
+msgid "On Shelf?"
+msgstr ""
+
+msgid "Title"
+msgstr ""
+
+msgid "Import Paints from CSV"
+msgstr ""
+
+msgid "Import from CSV"
+msgstr ""
+
+msgid "Export Paints to CSV"
+msgstr ""
+
+msgid "Export to CSV"
+msgstr ""
+
+msgid "Info & Settings"
+msgstr ""
+
+msgid "No paints found."
+msgstr ""
+
+msgid "No paint ranges found."
+msgstr ""
+
+msgid "No paints found for mixing."
+msgstr ""
+
+msgid "No paint ranges found for shade helper."
+msgstr ""
+
+msgid "No paints found for shade helper."
+msgstr ""
+
+msgid "Settings saved."
+msgstr ""
+
+msgid "You do not have permission to access this page."
+msgstr ""
+
+msgid "Please choose a paint range."
+msgstr ""
+
+msgid "Please upload a CSV file."
+msgstr ""
+
+#, php-format
+msgid "Imported %d paints."
+msgstr ""
+
+msgid "CSV file is missing or not readable."
+msgstr ""
+
+msgid "Unable to open CSV file."
+msgstr ""
+
+msgid "CSV file is empty."
+msgstr ""
+
+msgid "View %d"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
+msgid "Add another link"
+msgstr ""
+
+msgid "Link Title"
+msgstr ""
+
+msgid "Link URL"
+msgstr ""
+
+msgid "Paint number"
+msgstr ""
+
+msgid "Hex colour"
+msgstr ""
+
+msgid "On the shelf"
+msgstr ""
+
+msgid "Yes, I currently have this paint on my shelf"
+msgstr ""
+
+msgid "Linked posts / URLs"
+msgstr ""
+
+msgid "Link title"
+msgstr ""
+
+msgid "e.g. Tutorial, Review, Example Build"
+msgstr ""
+
+msgid "Remove link"
+msgstr ""
+
+msgid "Upload a CSV file to automatically create paints in a specific range."
+msgstr ""
+
+msgid "Expected format (per row): name, number, hex colour, on shelf (yes/no, optional)."
+msgstr ""
+
+msgid "Paint range"
+msgstr ""
+
+msgid "Select a range"
+msgstr ""
+
+msgid "CSV file"
+msgstr ""
+
+msgid "Import paints"
+msgstr ""
+
+msgid "What this plugin does"
+msgstr ""
+
+msgid ""
+"Paint Tracker and Mixing Helper helps you keep a structured list of your "
+"miniature paints, track which ones you currently own, link each paint to "
+"useful resources, and provide interactive colour tools on the front end."
+msgstr ""
+
+msgid "How the data is stored"
+msgstr ""
+
+msgid ""
+"The plugin adds a custom post type called “Paint Colours” and a taxonomy "
+"called “Paint Ranges”."
+msgstr ""
+
+msgid ""
+"each paint has a name (title), a paint number, a hex colour, an “On the "
+"shelf” flag, and optional links (tutorials, reviews, example builds, etc.)."
+msgstr ""
+
+msgid ""
+"group paints into ranges such as Vallejo Model Color, Vallejo Game Color, "
+"and so on."
+msgstr ""
+
+msgid "Shortcodes"
+msgstr ""
+
+msgid "[paint_table]"
+msgstr ""
+
+msgid "Displays a table of paints, optionally filtered to a single paint range."
+msgstr ""
+
+msgid "Attributes:"
+msgstr ""
+
+msgid "taxonomy slug of the paint range (optional)."
+msgstr ""
+
+msgid "number of paints to show (-1 shows all)."
+msgstr ""
+
+msgid "either \"meta_number\" (paint number) or \"title\"."
+msgstr ""
+
+msgid "\"yes\" to show only paints marked as on shelf, or \"any\" to show all paints."
+msgstr ""
+
+msgid "Example:"
+msgstr ""
+
+msgid "Paint table display"
+msgstr ""
+
+msgid ""
+"Use the option below to choose whether the paint table shows small colour "
+"dots (swatches) or highlights the entire row with the paint colour."
+msgstr ""
+
+msgid "Show colour dots (swatch column)"
+msgstr ""
+
+msgid "Highlight the entire row with the paint colour"
+msgstr ""
+
+msgid ""
+"Row highlighting applies the paint colour to the whole row and adjusts text "
+"to light/dark for readability."
+msgstr ""
+
+msgid "[mixing-helper]"
+msgstr ""
+
+msgid ""
+"Shows the two-paint mixing tool. You can pick two paints, set how many "
+"parts of each to mix, and see the resulting colour and hex value."
+msgstr ""
+
+msgid ""
+"Each paint dropdown can be filtered by range so you can quickly find the "
+"colours you want to mix."
+msgstr ""
+
+msgid "[shade-helper]"
+msgstr ""
+
+msgid ""
+"Shows the shade helper as a standalone tool. Choose a paint and the plugin "
+"will look for the darkest and lightest paints in the same range, then build "
+"a small ladder of lighter and darker mixes using those anchor colours."
+msgstr ""
+
+msgid ""
+"If a visitor arrives from the paint table by clicking a swatch or row, the "
+"shade helper can start with that colour already selected."
+msgstr ""
+
+msgid "Shading page URL"
+msgstr ""
+
+msgid ""
+"This setting tells the plugin where your Shade helper page lives. It should "
+"be the URL of the page where you are using the [shade-helper] shortcode."
+msgstr ""
+
+msgid ""
+"When this URL is set, the colour swatches (or highlighted rows, if you use "
+"row mode) in your [paint_table] output become links. Clicking them will take "
+"the visitor to your Shade helper page and automatically pass the clicked "
+"colour so that the ladder is built around that paint."
+msgstr ""
+
+msgid ""
+"If you leave this field empty, the swatches/rows remain as simple colour "
+"indicators and are not clickable."
+msgstr ""
+
+msgid "Enter the URL of the page where you are using the [shade-helper] shortcode."
+msgstr ""
+
+msgid "Importing paints from CSV"
+msgstr ""
+
+msgid ""
+"Under “Paint Colours → Import from CSV” you can bulk-create paints from a "
+"CSV file."
+msgstr ""
+
+msgid "Choose the paint range that the new paints should be assigned to."
+msgstr ""
+
+msgid "Upload a CSV file with one paint per row."
+msgstr ""
+
+msgid "Expected columns (per row):"
+msgstr ""
+
+msgid "title – paint name"
+msgstr ""
+
+msgid "number – paint number (optional)"
+msgstr ""
+
+msgid "hex – hex colour, e.g. #2f353a or 2f353a"
+msgstr ""
+
+msgid "on_shelf – 0 or 1 (optional)"
+msgstr ""
+
+msgid ""
+"An optional header row with column names (title, number, hex, on_shelf) is "
+"supported and will be detected automatically."
+msgstr ""
+
+msgid "Exporting paints to CSV"
+msgstr ""
+
+msgid ""
+"Under “Paint Colours → Export to CSV” you can download your paint collection "
+"as a CSV file."
+msgstr ""
+
+msgid "Filter by paint range."
+msgstr ""
+
+msgid "Optionally limit the export to paints marked as on shelf."
+msgstr ""
+
+msgid "Exported columns:"
+msgstr ""
+
+msgid "number – paint number"
+msgstr ""
+
+msgid "hex – hex colour"
+msgstr ""
+
+msgid "on_shelf – 0 or 1"
+msgstr ""
+
+msgid "ranges – list of range names (pipe-separated if more than one)."
+msgstr ""
+
+msgid "Mixing helper"
+msgstr ""
+
+msgid "Paint 1"
+msgstr ""
+
+msgid "Range"
+msgstr ""
+
+msgid "All"
+msgstr ""
+
+msgid "Paint"
+msgstr ""
+
+msgid "Select a paint"
+msgstr ""
+
+msgid "Parts"
+msgstr ""
+
+msgid "Paint 2"
+msgstr ""
+
+msgid "Result"
+msgstr ""
+
+msgid "Shade helper"
+msgstr ""
+
+msgid "Select a paint to see lighter and darker mixes."
+msgstr ""
+
+msgid "Colour"
+msgstr ""
+
+msgid "Models"
+msgstr ""
