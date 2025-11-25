@@ -418,69 +418,91 @@ jQuery(function($) {
         initRangeDropdown($(this));
     });
 
-    // Initialise shade helper with default hex (if provided)
+    // Initialise shade helper with default paint (by ID if available, otherwise by hex)
     $('.pct-shade-container').each(function() {
         var $container = $(this);
         var defaultHex = ($container.data('default-shade-hex') || '').toString().trim();
-
+        var defaultId  = parseInt($container.data('default-shade-id'), 10);
+        if (!isFinite(defaultId)) {
+            defaultId = 0;
+        }
+    
         // Always initialise the empty state at least once
-        if (!defaultHex) {
+        if (!defaultId && !defaultHex) {
             updateShadeScale($container);
             return;
         }
-
-        // Normalise the hex (# + lowercase)
-        if (defaultHex.charAt(0) !== '#') {
-            defaultHex = '#' + defaultHex;
+    
+        // Normalise the hex (# + lowercase) if provided
+        if (defaultHex) {
+            if (defaultHex.charAt(0) !== '#') {
+                defaultHex = '#' + defaultHex;
+            }
+            defaultHex = defaultHex.toLowerCase();
         }
-        var normDefault = defaultHex.toLowerCase();
-
+    
         var $shadeColumn   = $container.find('.pct-mix-column-shade');
         if (!$shadeColumn.length) {
             updateShadeScale($container);
             return;
         }
-
+    
         var $paintDropdown = $shadeColumn.find('.pct-mix-dropdown-shade');
         var $options       = $paintDropdown.find('.pct-mix-option');
         if (!$options.length) {
             updateShadeScale($container);
             return;
         }
-
-        // Find matching paint option by hex
+    
+        // Prefer matching paint option by ID, then fall back to hex
         var $match = null;
-        $options.each(function () {
-            var hex = ($(this).data('hex') || '').toString().toLowerCase();
-            if (hex === normDefault) {
-                $match = $(this);
-                return false; // break
-            }
-        });
-
+    
+        if (defaultId) {
+            $options.each(function () {
+                var optId = parseInt($(this).data('id'), 10);
+                if (!isFinite(optId)) {
+                    optId = 0;
+                }
+                if (optId === defaultId) {
+                    $match = $(this);
+                    return false; // break
+                }
+            });
+        }
+    
+        if (!$match && defaultHex) {
+            $options.each(function () {
+                var hex = ($(this).data('hex') || '').toString().toLowerCase();
+                if (hex === defaultHex) {
+                    $match = $(this);
+                    return false; // break
+                }
+            });
+        }
+    
         if (!$match) {
             updateShadeScale($container);
             return;
         }
-
+    
         // Set the range dropdown based on the matched option
         var rangeId        = $match.data('range') || '';
         var $rangeDropdown = $shadeColumn.find('.pct-mix-range-dropdown-shade');
-
+    
         if ($rangeDropdown.length) {
             var $rangeList   = $rangeDropdown.find('.pct-mix-list');
             var $rangeHidden = $rangeDropdown.find('.pct-mix-range-value');
             var $rangeLabel  = $rangeDropdown.find('.pct-mix-trigger-label');
-
+    
             $rangeList.find('.pct-mix-range-option').removeClass('is-selected');
-
+    
             var selector = '.pct-mix-range-option';
             if (rangeId !== '') {
                 selector += '[data-range="' + String(rangeId) + '"]';
             } else {
                 selector += '[data-range=""]';
             }
-
+    
             var $rangeOpt = $rangeList.find(selector).first();
             if ($rangeOpt.length) {
                 $rangeOpt.addClass('is-selected');
@@ -489,43 +511,63 @@ jQuery(function($) {
                 if (rangeText) {
                     $rangeLabel.text(rangeText);
                 }
-
+    
                 // Filter paints by range (same as user picking a range)
                 filterPaintOptions($shadeColumn, rangeId);
-
-                // Re-find the matching paint after filtering
+    
+                // Re-find the matching paint after filtering (still prefer ID)
                 $options = $paintDropdown.find('.pct-mix-option');
-                $match   = null;
-                $options.each(function () {
-                    var hex = ($(this).data('hex') || '').toString().toLowerCase();
-                    if (hex === normDefault) {
-                        $match = $(this);
-                        return false;
-                    }
-                });
+                var newMatch = null;
+    
+                if (defaultId) {
+                    $options.each(function () {
+                        var optId = parseInt($(this).data('id'), 10);
+                        if (!isFinite(optId)) {
+                            optId = 0;
+                        }
+                        if (optId === defaultId) {
+                            newMatch = $(this);
+                            return false;
+                        }
+                    });
+                }
+    
+                if (!newMatch && defaultHex) {
+                    $options.each(function () {
+                        var hex = ($(this).data('hex') || '').toString().toLowerCase();
+                        if (hex === defaultHex) {
+                            newMatch = $(this);
+                            return false;
+                        }
+                    });
+                }
+    
+                if (newMatch) {
+                    $match = newMatch;
+                }
             }
         }
-
+    
         if ($match) {
-            var hexVal   = $match.data('hex') || defaultHex;
+            var hexVal   = ($match.data('hex') || defaultHex || '').toString();
             var label    = $match.data('label') || '';
             var $hidden  = $paintDropdown.find('.pct-mix-value');
             var $labelEl = $paintDropdown.find('.pct-mix-trigger-label');
             var $swatch  = $paintDropdown.find('.pct-mix-trigger-swatch');
-
+    
             $paintDropdown.attr('data-hex', hexVal);
             $hidden.val(hexVal);
             $paintDropdown.find('.pct-mix-option').removeClass('is-selected');
             $match.addClass('is-selected');
-
+    
             if (label) {
                 $labelEl.text(label);
             }
-            if ($swatch.length) {
+            if ($swatch.length && hexVal) {
                 $swatch.css('background-color', hexVal);
             }
         }
-
+    
         // Finally, build the shade ladder for this colour
         updateShadeScale($container);
     });
