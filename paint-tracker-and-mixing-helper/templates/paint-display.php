@@ -3,7 +3,7 @@
  * Frontend table template for Paint Tracker and Mixing Helper.
  *
  * Expects:
- * - $pct_paints              : array of [ 'name', 'number', 'hex', 'links' ]
+ * - $pct_paints              : array of [ 'id', 'name', 'number', 'hex', 'links' ]
  * - $pct_range_title         : string (range name, e.g. "Vallejo Model Color")
  * - $pct_mixing_page_url     : string (URL of page with [shade-helper])
  * - $pct_table_display_mode  : string 'dots' or 'rows'
@@ -88,9 +88,9 @@ $container_class_attr = implode( ' ', array_map( 'sanitize_html_class', $contain
                     <?php if ( 'dots' === $display_mode ) : ?>
                         <th class="pct-swatch-header" aria-hidden="true"></th>
                     <?php endif; ?>
-                    <th><?php esc_html_e( 'Colour', 'pct' ); ?></th>
-                    <th><?php esc_html_e( 'Number', 'pct' ); ?></th>
-                    <th class="pct-models-header"><?php esc_html_e( 'Models', 'pct' ); ?></th>
+                    <th><?php esc_html_e( 'Colour', 'paint-tracker-and-mixing-helper' ); ?></th>
+                    <th><?php esc_html_e( 'Number', 'paint-tracker-and-mixing-helper' ); ?></th>
+                    <th class="pct-models-header"><?php esc_html_e( 'Models', 'paint-tracker-and-mixing-helper' ); ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -102,21 +102,21 @@ $container_class_attr = implode( ' ', array_map( 'sanitize_html_class', $contain
                 $links  = isset( $paint['links'] )  && is_array( $paint['links'] )
                     ? $paint['links']
                     : [];
-                
+
                 // Build shade helper URL if one is configured.
                 $shade_url = '';
                 if ( ! empty( $pct_mixing_page_url ) && ( $id || $hex ) ) {
                     $args = [];
-                
+
                     if ( $id ) {
                         $args['pct_shade_id'] = $id;
                     }
-                
+
                     if ( $hex ) {
                         // Drop any leading '#' so it doesn't become a fragment.
                         $args['pct_shade_hex'] = ltrim( $hex, '#' );
                     }
-                
+
                     if ( ! empty( $args ) ) {
                         $shade_url = add_query_arg(
                             $args,
@@ -193,8 +193,8 @@ $container_class_attr = implode( ' ', array_map( 'sanitize_html_class', $contain
 
                                 if ( '' === $ltitle ) {
                                     $ltitle = ( $total_links > 1 )
-                                        ? sprintf( __( 'View %d', 'pct' ), $i + 1 )
-                                        : __( 'View', 'pct' );
+                                        ? sprintf( __( 'View %d', 'paint-tracker-and-mixing-helper' ), $i + 1 )
+                                        : __( 'View', 'paint-tracker-and-mixing-helper' );
                                 }
 
                                 $shown++;
