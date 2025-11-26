@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Paint Tracker and Mixing Helper
  * Description: Shortcodes to display your miniature paint collection, as well as a mixing and shading helper for specific colours.
- * Version: 0.7.3
+ * Version: 0.7.4
  * Author: C4813
  * Text Domain: paint-tracker-and-mixing-helper
  * Domain Path: /languages
@@ -30,7 +30,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         const META_LINK     = '_pct_link'; // legacy single link
 
         // Plugin version (used for asset cache-busting)
-        const VERSION = '0.7.3';
+        const VERSION = '0.7.4';
 
         public function __construct() {
             add_action( 'init',                    [ $this, 'register_types' ] );
@@ -40,11 +40,13 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             add_action( 'add_meta_boxes',          [ $this, 'add_meta_boxes' ] );
             add_action( 'save_post_' . self::CPT,  [ $this, 'save_paint_meta' ], 10, 2 );
 
-            // Quick Edit
+            // Quick Edit + Bulk Edit
             add_action( 'quick_edit_custom_box',   [ $this, 'quick_edit_fields' ], 10, 2 );
+            add_action( 'bulk_edit_custom_box',    [ $this, 'bulk_edit_fields' ], 10, 2 );
             add_action( 'save_post_' . self::CPT,  [ $this, 'save_quick_edit' ], 10, 2 );
             add_action( 'admin_footer-edit.php',   [ $this, 'print_quick_edit_js' ] );
-
+            add_action( 'admin_init',              [ $this, 'handle_bulk_on_shelf_update' ] );
+            
             // Frontend assets
             add_action( 'wp_enqueue_scripts',      [ $this, 'enqueue_frontend_assets' ] );
 
@@ -171,82 +173,86 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             include plugin_dir_path( __FILE__ ) . 'admin/admin-page.php';
         }
 
-        /**
+         /**
          * Save meta box fields (including on-shelf flag & multiple links).
-         * Handles both full edit screen and Quick Edit saves.
+         * Handles:
+         * - Full edit screen
+         * - Quick Edit (delegated to save_quick_edit)
          */
         public function save_paint_meta( $post_id, $post ) {
-
-            // Allow either the main meta box nonce OR quick edit nonce
-            $has_nonce = isset( $_POST['pct_paint_meta_nonce'] ) || isset( $_POST['pct_quick_edit_nonce'] );
-            if ( ! $has_nonce ) {
-                return;
-            }
-
-            // For simplicity, verify whichever nonce is present
-            if ( isset( $_POST['pct_paint_meta_nonce'] ) && ! wp_verify_nonce( $_POST['pct_paint_meta_nonce'], 'pct_save_paint_meta' ) ) {
-                return;
-            }
-
-            if ( isset( $_POST['pct_quick_edit_nonce'] ) && ! wp_verify_nonce( $_POST['pct_quick_edit_nonce'], 'pct_quick_edit' ) ) {
-                return;
-            }
-            
-            // If this is a Quick Edit save, let save_quick_edit() handle it.
-            if ( isset( $_POST['pct_quick_edit_nonce'] ) ) {
-                return;
-            }
-
-            // Check autosave
-            if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-                return;
-            }
-
-            // Check permissions
+        
+            // Only handle our CPT
             if ( self::CPT !== $post->post_type ) {
                 return;
             }
-
+        
+            // Autosave?
+            if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+                return;
+            }
+        
+            // Permission check
             if ( ! current_user_can( 'edit_post', $post_id ) ) {
                 return;
             }
-
+        
+            // Quick Edit is handled in save_quick_edit(); just verify nonce and bail.
+            if ( isset( $_POST['pct_quick_edit_nonce'] ) ) {
+                if ( ! wp_verify_nonce( $_POST['pct_quick_edit_nonce'], 'pct_quick_edit' ) ) {
+                    return;
+                }
+                return;
+            }
+        
+            // Normal edit screen must have meta box nonce
+            if (
+                ! isset( $_POST['pct_paint_meta_nonce'] ) ||
+                ! wp_verify_nonce( $_POST['pct_paint_meta_nonce'], 'pct_save_paint_meta' )
+            ) {
+                return;
+            }
+        
+            // ----- Normal edit screen save below -----
+        
             // Save number
-            $number = isset( $_POST['pct_number'] ) ? sanitize_text_field( wp_unslash( $_POST['pct_number'] ) ) : '';
+            $number = isset( $_POST['pct_number'] )
+                ? sanitize_text_field( wp_unslash( $_POST['pct_number'] ) )
+                : '';
             update_post_meta( $post_id, self::META_NUMBER, $number );
-
+        
             // Save hex
-            $hex = isset( $_POST['pct_hex'] ) ? sanitize_text_field( wp_unslash( $_POST['pct_hex'] ) ) : '';
+            $hex = isset( $_POST['pct_hex'] )
+                ? sanitize_text_field( wp_unslash( $_POST['pct_hex'] ) )
+                : '';
             update_post_meta( $post_id, self::META_HEX, $hex );
-
+        
             // Save on-shelf flag
             $on_shelf = isset( $_POST['pct_on_shelf'] ) ? 1 : 0;
             update_post_meta( $post_id, self::META_ON_SHELF, $on_shelf );
-
-            // -------- Save multiple links --------
+        
+            // -------- Save multiple links (legacy format: pct_links_title[] + pct_links_url[]) --------
             $links = [];
-
-            // Backwards/alternate format: pct_links_title[] + pct_links_url[]
+        
             if (
                 ( isset( $_POST['pct_links_title'] ) && is_array( $_POST['pct_links_title'] ) ) ||
                 ( isset( $_POST['pct_links_url'] ) && is_array( $_POST['pct_links_url'] ) )
             ) {
                 $titles = isset( $_POST['pct_links_title'] ) ? (array) $_POST['pct_links_title'] : [];
                 $urls   = isset( $_POST['pct_links_url'] )   ? (array) $_POST['pct_links_url']   : [];
-            
+        
                 // Normalise indexes
                 $titles = array_values( $titles );
                 $urls   = array_values( $urls );
-            
+        
                 $max = max( count( $titles ), count( $urls ) );
-            
+        
                 for ( $i = 0; $i < $max; $i++ ) {
                     $title_raw = isset( $titles[ $i ] ) ? $titles[ $i ] : '';
                     $url_raw   = isset( $urls[ $i ] )   ? $urls[ $i ]   : '';
-            
+        
                     $title = sanitize_text_field( wp_unslash( $title_raw ) );
                     $url   = esc_url_raw( wp_unslash( $url_raw ) );
-            
+        
                     if ( $url ) {
                         $links[] = [
                             'title' => $title,
@@ -255,9 +261,9 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                     }
                 }
             }
-            
+        
             update_post_meta( $post_id, self::META_LINKS, $links );
-
+        
             // If we now have structured links, remove the legacy single link
             if ( ! empty( $links ) ) {
                 delete_post_meta( $post_id, self::META_LINK );
@@ -296,6 +302,99 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             </fieldset>
             <?php
             wp_nonce_field( 'pct_quick_edit', 'pct_quick_edit_nonce' );
+        }
+        
+        /**
+         * Output Bulk Edit field for On Shelf.
+         */
+        public function bulk_edit_fields( $column_name, $post_type ) {
+            if ( self::CPT !== $post_type || 'pct_number' !== $column_name ) {
+                return;
+            }
+            ?>
+            <fieldset class="inline-edit-col-right">
+                <div class="inline-edit-group">
+                    <label class="alignleft">
+                        <span class="title"><?php esc_html_e( 'On Shelf?', 'paint-tracker-and-mixing-helper' ); ?></span>
+                        <select name="pct_bulk_on_shelf">
+                            <option value=""><?php esc_html_e( '— No Change —', 'paint-tracker-and-mixing-helper' ); ?></option>
+                            <option value="1"><?php esc_html_e( 'On shelf', 'paint-tracker-and-mixing-helper' ); ?></option>
+                            <option value="0"><?php esc_html_e( 'Not on shelf', 'paint-tracker-and-mixing-helper' ); ?></option>
+                        </select>
+                    </label>
+                </div>
+            </fieldset>
+            <?php
+            wp_nonce_field( 'pct_bulk_edit', 'pct_bulk_edit_nonce' );
+        }
+
+        /**
+         * Handle bulk "On Shelf?" updates from the list table bulk edit UI.
+         */
+        public function handle_bulk_on_shelf_update() {
+            if ( ! is_admin() ) {
+                return;
+            }
+        
+            // Only run on our CPT list screen
+            $post_type = isset( $_REQUEST['post_type'] ) ? sanitize_key( $_REQUEST['post_type'] ) : '';
+            if ( self::CPT !== $post_type ) {
+                return;
+            }
+        
+            // Only when the bulk edit form was used
+            if ( ! isset( $_REQUEST['bulk_edit'] ) ) {
+                return;
+            }
+        
+            // Our bulk field must be present
+            if ( ! isset( $_REQUEST['pct_bulk_on_shelf'] ) ) {
+                return;
+            }
+        
+            // Check nonce from bulk_edit_fields()
+            if (
+                ! isset( $_REQUEST['pct_bulk_edit_nonce'] ) ||
+                ! wp_verify_nonce( $_REQUEST['pct_bulk_edit_nonce'], 'pct_bulk_edit' )
+            ) {
+                return;
+            }
+        
+            // Posts selected
+            if ( empty( $_REQUEST['post'] ) || ! is_array( $_REQUEST['post'] ) ) {
+                return;
+            }
+        
+            if ( ! current_user_can( 'edit_posts' ) ) {
+                return;
+            }
+        
+            $bulk_value = (string) wp_unslash( $_REQUEST['pct_bulk_on_shelf'] );
+        
+            // User selected "— No Change —"
+            if ( '' === $bulk_value ) {
+                return;
+            }
+        
+            $on_shelf = ( '1' === $bulk_value ) ? 1 : 0;
+        
+            $post_ids = array_map( 'absint', (array) $_REQUEST['post'] );
+        
+            foreach ( $post_ids as $post_id ) {
+                if ( ! $post_id ) {
+                    continue;
+                }
+        
+                if ( get_post_type( $post_id ) !== self::CPT ) {
+                    continue;
+                }
+        
+                if ( ! current_user_can( 'edit_post', $post_id ) ) {
+                    continue;
+                }
+        
+                update_post_meta( $post_id, self::META_ON_SHELF, $on_shelf );
+            }
         }
 
         /**
@@ -1017,9 +1116,9 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 }
             }
 
-            $pct_admin_view     = 'import_page';
-            $pct_import_message = $message;
-            $pct_import_errors  = $errors;
+            $pct_admin_view      = 'import_page';
+            $pct_import_message  = $message;
+            $pct_import_errors   = $errors;
 
             $pct_import_ranges = get_terms(
                 [
