@@ -110,7 +110,7 @@ elseif ( 'import_page' === $pct_admin_view ) : ?>
 
         <?php
         $errors  = isset( $pct_import_errors ) && is_array( $pct_import_errors ) ? $pct_import_errors : [];
-        $message = isset( $pct_import_msg ) ? $pct_import_msg : '';
+        $message = isset( $pct_import_message ) ? $pct_import_message : '';
 
         if ( ! empty( $errors ) ) : ?>
             <div class="notice notice-error">
