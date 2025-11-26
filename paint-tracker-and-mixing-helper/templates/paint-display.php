@@ -213,24 +213,3 @@ $container_class_attr = implode( ' ', array_map( 'sanitize_html_class', $contain
         </table>
     </div>
 </div>
-
-<?php if ( 'rows' === $display_mode && ! empty( $pct_mixing_page_url ) ) : ?>
-<script>
-document.addEventListener('click', function (event) {
-    // Ignore clicks on links or form controls so normal behaviour still works.
-    if (event.target.closest('a, button, input, select, textarea')) {
-        return;
-    }
-
-    var row = event.target.closest('tr[data-shade-url]');
-    if (!row) {
-        return;
-    }
-
-    var url = row.getAttribute('data-shade-url');
-    if (url) {
-        window.location.href = url;
-    }
-});
-</script>
-<?php endif; ?>
