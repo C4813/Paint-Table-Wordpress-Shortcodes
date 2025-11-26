@@ -32,10 +32,6 @@ jQuery(function($) {
     }
 
     function rgbToHex(r, g, b) {
-        return '#' + componentToHex(r) + componentToHex(b);
-    }
-
-    function rgbToHex(r, g, b) {
         return '#' + componentToHex(r) + componentToHex(g) + componentToHex(b);
     }
 
