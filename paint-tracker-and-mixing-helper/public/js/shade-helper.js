@@ -8,70 +8,13 @@ jQuery(function($) {
         }
         return fallback;
     }
-
-    // ---------- Colour helpers ----------
-
-    function hexToRgb(hex) {
-        if (!hex) return null;
-        hex = hex.toString().trim();
-        if (hex.charAt(0) === '#') {
-            hex = hex.slice(1);
-        }
-        if (hex.length === 3) {
-            hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
-        }
-        if (hex.length !== 6) {
-            return null;
-        }
-        var num = parseInt(hex, 16);
-        if (isNaN(num)) {
-            return null;
-        }
-        return {
-            r: (num >> 16) & 255,
-            g: (num >> 8) & 255,
-            b: num & 255
-        };
-    }
-
-    function componentToHex(c) {
-        var v = Math.max(0, Math.min(255, Math.round(c)));
-        var s = v.toString(16);
-        return s.length === 1 ? '0' + s : s;
-    }
-
-    function rgbToHex(r, g, b) {
-        return '#' + componentToHex(r) + componentToHex(g) + componentToHex(b);
-    }
-
-    function mixColors(hex1, hex2, w1, w2) {
-        var c1 = hexToRgb(hex1);
-        var c2 = hexToRgb(hex2);
-        if (!c1 || !c2) {
-            return null;
-        }
-
-        w1 = Number(w1) || 0;
-        w2 = Number(w2) || 0;
-
-        var total = w1 + w2;
-        if (total <= 0) {
-            return null;
-        }
-
-        var r = (c1.r * w1 + c2.r * w2) / total;
-        var g = (c1.g * w1 + c2.g * w2) / total;
-        var b = (c1.b * w1 + c2.b * w2) / total;
-
-        return rgbToHex(r, g, b);
-    }
-
-    function textColorForHex(hex) {
-        var c = hexToRgb(hex);
-        if (!c) return '#111827';
-        var lum = (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255;
-        return lum < 0.5 ? '#f9fafb' : '#111827';
-    }
+    
+    // ---------- Colour helpers (shared via pct-color-utils.js) ----------
+    
+    var hexToRgb        = window.pctColorUtils.hexToRgb;
+    var rgbToHex        = window.pctColorUtils.rgbToHex;
+    var mixColors       = window.pctColorUtils.mixColors;
+    var textColorForHex = window.pctColorUtils.textColorForHex;
 
     // ---------- Shared dropdown helpers (shade helper) ----------
 
