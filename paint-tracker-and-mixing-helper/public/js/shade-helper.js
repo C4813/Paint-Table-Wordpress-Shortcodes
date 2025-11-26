@@ -163,6 +163,56 @@ jQuery(function($) {
             }
         });
     }
+    
+    // ---------- Extra colour helpers for shade logic ----------
+
+    function rgbToHsl(r, g, b) {
+        r /= 255;
+        g /= 255;
+        b /= 255;
+
+        var max = Math.max(r, g, b);
+        var min = Math.min(r, g, b);
+        var h, s;
+        var l = (max + min) / 2;
+
+        if (max === min) {
+            // achromatic (grey)
+            h = 0;
+            s = 0;
+        } else {
+            var d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+            switch (max) {
+                case r:
+                    h = (g - b) / d + (g < b ? 6 : 0);
+                    break;
+                case g:
+                    h = (b - r) / d + 2;
+                    break;
+                case b:
+                    h = (r - g) / d + 4;
+                    break;
+            }
+            h = h * 60;
+        }
+
+        return { h: h, s: s, l: l };
+    }
+
+    function hexToHslSafe(hex) {
+        var rgb = hexToRgb(hex);
+        if (!rgb) {
+            return null;
+        }
+        return rgbToHsl(rgb.r, rgb.g, rgb.b);
+    }
+
+    function hueDistanceDeg(h1, h2) {
+        var d = Math.abs(h1 - h2);
+        return Math.min(d, 360 - d);
+    }
 
     // ---------- Shade range helper logic ----------
 
@@ -200,6 +250,9 @@ jQuery(function($) {
             return;
         }
 
+        var baseLum = (0.299 * baseRgb.r + 0.587 * baseRgb.g + 0.114 * baseRgb.b) / 255;
+        var baseHsl = rgbToHsl(baseRgb.r, baseRgb.g, baseRgb.b);
+
         // find the selected option for this base colour
         var $selectedOption = $paintDropdown.find('.pct-mix-option.is-selected').first();
         if (!$selectedOption.length) {
@@ -223,28 +276,57 @@ jQuery(function($) {
             return;
         }
 
-        var baseRangeId = $selectedOption.data('range');
-        if (!baseRangeId && baseRangeId !== 0) {
-            $scale.html(
-                '<p class="pct-shade-empty">' +
-                    pctL10n('noRange', 'This paint is not assigned to a range.') +
-                '</p>'
-            );
-            return;
-        }
-
         var baseLabel = $selectedOption.data('label') || '';
 
-        var darkest = null;
+        // Determine which range we should respect:
+        // - If there's a range dropdown, use its current value
+        // - Otherwise, fall back to the base paint's own range
+        var $rangeDropdown = $shadeHelper.find('.pct-mix-range-dropdown-shade');
+        var activeRangeId  = '';
+
+        if ($rangeDropdown.length) {
+            var val = $rangeDropdown.find('.pct-mix-range-value').val();
+            if (typeof val === 'undefined' || val === null) {
+                activeRangeId = '';
+            } else {
+                activeRangeId = String(val);
+            }
+        } else {
+            var baseRangeId = $selectedOption.data('range');
+            if (typeof baseRangeId === 'undefined' || baseRangeId === null) {
+                activeRangeId = '';
+            } else {
+                activeRangeId = String(baseRangeId);
+            }
+        }
+
+        var darkest  = null;
         var lightest = null;
 
-        // Collect paints in the same range and find darkest/lightest anchors
+        // Thresholds for "sane" anchors
+        var MAX_HUE_DIFF_DEG = 40;   // max hue difference for non-neutral colours
+        var SAT_NEUTRAL      = 0.05; // very low-sat colours = neutral
+        var LUM_EPS          = 0.03; // minimum luminance difference to count as darker/lighter
+
+        // Base is considered neutral if it's very low-sat or extremely bright/dark
+        var baseIsNeutral =
+            (baseHsl.s <= SAT_NEUTRAL) ||
+            (baseLum < 0.25) ||
+            (baseLum > 0.85);
+
+        // Collect paints and find darkest/lightest anchors
         $paintDropdown.find('.pct-mix-option').each(function () {
-            var $opt  = $(this);
-            var optHex = $opt.data('hex') || '';
+            var $opt     = $(this);
+            var optHex   = $opt.data('hex') || '';
             var optRange = $opt.data('range');
 
-            if (!optHex || String(optRange) !== String(baseRangeId)) {
+            if (!optHex) {
+                return;
+            }
+
+            // If a specific range is selected, respect that.
+            // If activeRangeId === '' we are in "All" mode and accept all ranges.
+            if (activeRangeId !== '' && String(optRange) !== activeRangeId) {
                 return;
             }
 
@@ -259,33 +341,83 @@ jQuery(function($) {
             }
 
             var lum = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+            var hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
             var label = $opt.data('label') || '';
 
-            if (!darkest || lum < darkest.lum) {
-                darkest = { hex: optHex, lum: lum, label: label };
+            // Neutral-ish candidates:
+            //   - very low saturation (grey/white/black)
+            //   - OR very dark
+            //   - OR very light
+            var isNeutralLike =
+                (hsl.s <= SAT_NEUTRAL) ||
+                (lum < 0.25) ||
+                (lum > 0.85);
+
+            var hueDiff = 0;
+            if (!isNeutralLike && !baseIsNeutral) {
+                hueDiff = hueDistanceDeg(hsl.h, baseHsl.h);
             }
-            if (!lightest || lum > lightest.lum) {
-                lightest = { hex: optHex, lum: lum, label: label };
+
+            var isDarkerCandidate  = (lum < baseLum - LUM_EPS);
+            var isLighterCandidate = (lum > baseLum + LUM_EPS);
+
+            // If base is neutral (e.g. white), only accept neutral-ish anchors
+            if (baseIsNeutral && !isNeutralLike) {
+                return;
+            }
+
+            if (isDarkerCandidate) {
+                if (!darkest || lum < darkest.lum) {
+                    darkest = {
+                        hex: optHex,
+                        lum: lum,
+                        label: label,
+                        hueDiff: hueDiff,
+                        isNeutral: isNeutralLike
+                    };
+                }
+            }
+
+            if (isLighterCandidate) {
+                if (!lightest || lum > lightest.lum) {
+                    lightest = {
+                        hex: optHex,
+                        lum: lum,
+                        label: label,
+                        hueDiff: hueDiff,
+                        isNeutral: isNeutralLike
+                    };
+                }
             }
         });
 
-        if (!darkest && !lightest) {
+        // For non-neutral bases, reject anchors too far away in hue (unless they’re neutral-like)
+        if (darkest && !baseIsNeutral && !darkest.isNeutral && darkest.hueDiff > MAX_HUE_DIFF_DEG) {
+            darkest = null;
+        }
+        if (lightest && !baseIsNeutral && !lightest.isNeutral && lightest.hueDiff > MAX_HUE_DIFF_DEG) {
+            lightest = null;
+        }
+
+        var hasDarker  = !!darkest;
+        var hasLighter = !!lightest;
+
+        // If we truly have nothing useful, show an error message
+        if (!hasDarker && !hasLighter) {
             $scale.html(
                 '<p class="pct-shade-empty">' +
-                    pctL10n('notEnoughPaints', 'Not enough paints in this range to build a shade ladder.') +
+                    pctL10n('notEnoughPaints', 'Not enough paints in this selection to build a shade ladder.') +
                 '</p>'
             );
             return;
         }
 
         // Ratios: [partsBase, partsOther]
-        // Darkest at the top (more darkener), then approach base
         var darkerRatios = [
             [1, 3], // darkest: 1 base, 3 darkener
             [1, 1],
             [3, 1]  // closest to base: 3 base, 1 darkener
         ];
-        // For lighter mixes: closest to base first after base, then lightest
         var lighterRatios = [
             [3, 1], // closest to base: 3 base, 1 lightener
             [1, 1],
@@ -294,7 +426,7 @@ jQuery(function($) {
 
         var rows = [];
 
-        if (darkest) {
+        if (hasDarker) {
             darkerRatios.forEach(function (pair) {
                 var mixed = mixColors(baseHex, darkest.hex, pair[0], pair[1]);
                 if (!mixed) {
@@ -317,7 +449,7 @@ jQuery(function($) {
             baseLabel: baseLabel
         });
 
-        if (lightest) {
+        if (hasLighter) {
             lighterRatios.forEach(function (pair) {
                 var mixed = mixColors(baseHex, lightest.hex, pair[0], pair[1]);
                 if (!mixed) {
@@ -332,13 +464,17 @@ jQuery(function($) {
             });
         }
 
-        if (!rows.length) {
-            $scale.html(
-                '<p class="pct-shade-empty">' +
-                    pctL10n('unableToGenerate', 'Unable to generate mixes for this colour.') +
-                '</p>'
-            );
-            return;
+        // Build info messages for missing sides
+        var infoHtml = '';
+        if (!hasDarker) {
+            infoHtml += '<p class="pct-shade-empty">' +
+                pctL10n('noDarker', 'Not enough darker paints in this selection to generate darker mixes.') +
+                '</p>';
+        }
+        if (!hasLighter) {
+            infoHtml += '<p class="pct-shade-empty">' +
+                pctL10n('noLighter', 'Not enough lighter paints in this selection to generate lighter mixes.') +
+                '</p>';
         }
 
         var html = '';
@@ -347,7 +483,6 @@ jQuery(function($) {
             var textColor = textColorForHex(row.hex);
 
             if (row.type === 'base') {
-                // Centre row: just the base paint name
                 mainText = row.baseLabel || '';
             } else {
                 var otherLabel = row.otherLabel || '';
@@ -370,7 +505,7 @@ jQuery(function($) {
             html += '</div>';
         });
 
-        $scale.html(html);
+        $scale.html(infoHtml + html);
     }
 
     // ---------- Init shade helper dropdowns + default hex ----------
