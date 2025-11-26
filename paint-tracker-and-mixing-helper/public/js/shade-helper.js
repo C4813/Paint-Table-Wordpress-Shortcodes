@@ -1,5 +1,14 @@
 jQuery(function($) {
 
+    // ---------- L10n helper ----------
+
+    function pctL10n(key, fallback) {
+        if (window.pctShadeHelperL10n && typeof window.pctShadeHelperL10n[key] === 'string') {
+            return window.pctShadeHelperL10n[key];
+        }
+        return fallback;
+    }
+
     // ---------- Colour helpers ----------
 
     function hexToRgb(hex) {
@@ -100,7 +109,9 @@ jQuery(function($) {
         $dropdown.find('.pct-mix-value').val('');
         $dropdown.attr('data-hex', '');
         $list.find('.pct-mix-option').removeClass('is-selected');
-        $dropdown.find('.pct-mix-trigger-label').text('Select a paint');
+        $dropdown.find('.pct-mix-trigger-label').text(
+            pctL10n('selectPaint', 'Select a paint')
+        );
         $dropdown.find('.pct-mix-trigger-swatch').css('background-color', 'transparent');
     }
 
@@ -229,7 +240,9 @@ jQuery(function($) {
 
         if (!baseHex) {
             $scale.html(
-                '<p class="pct-shade-empty">Select a paint to see lighter and darker mixes.</p>'
+                '<p class="pct-shade-empty">' +
+                    pctL10n('selectPaint', 'Select a paint to see lighter and darker mixes.') +
+                '</p>'
             );
             return;
         }
@@ -237,7 +250,9 @@ jQuery(function($) {
         var baseRgb = hexToRgb(baseHex);
         if (!baseRgb) {
             $scale.html(
-                '<p class="pct-shade-empty">This colour has an invalid hex value.</p>'
+                '<p class="pct-shade-empty">' +
+                    pctL10n('invalidHex', 'This colour has an invalid hex value.') +
+                '</p>'
             );
             return;
         }
@@ -258,7 +273,9 @@ jQuery(function($) {
 
         if (!$selectedOption.length) {
             $scale.html(
-                '<p class="pct-shade-empty">Could not determine the selected paint in this range.</p>'
+                '<p class="pct-shade-empty">' +
+                    pctL10n('noSelectedPaint', 'Could not determine the selected paint in this range.') +
+                '</p>'
             );
             return;
         }
@@ -266,7 +283,9 @@ jQuery(function($) {
         var baseRangeId = $selectedOption.data('range');
         if (!baseRangeId && baseRangeId !== 0) {
             $scale.html(
-                '<p class="pct-shade-empty">This paint is not assigned to a range.</p>'
+                '<p class="pct-shade-empty">' +
+                    pctL10n('noRange', 'This paint is not assigned to a range.') +
+                '</p>'
             );
             return;
         }
@@ -309,7 +328,9 @@ jQuery(function($) {
 
         if (!darkest && !lightest) {
             $scale.html(
-                '<p class="pct-shade-empty">Not enough paints in this range to build a shade ladder.</p>'
+                '<p class="pct-shade-empty">' +
+                    pctL10n('notEnoughPaints', 'Not enough paints in this range to build a shade ladder.') +
+                '</p>'
             );
             return;
         }
@@ -370,7 +391,9 @@ jQuery(function($) {
 
         if (!rows.length) {
             $scale.html(
-                '<p class="pct-shade-empty">Unable to generate mixes for this colour.</p>'
+                '<p class="pct-shade-empty">' +
+                    pctL10n('unableToGenerate', 'Unable to generate mixes for this colour.') +
+                '</p>'
             );
             return;
         }
