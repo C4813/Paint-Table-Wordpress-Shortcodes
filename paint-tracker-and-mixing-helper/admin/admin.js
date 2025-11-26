@@ -85,6 +85,7 @@ jQuery(function($) {
      * Info & Settings: auto-save options
      * - Paint table display (radio)
      * - Shading page URL (on change)
+     * - Shade helper hue behaviour (radio)
      */
 
     // Helper: submit closest form via native submit()
@@ -102,6 +103,11 @@ jQuery(function($) {
 
     // Auto-submit when the shading page URL is changed (on change/blur)
     $(document).on('change', '#pct_mixing_page_url', function() {
+        pctSubmitClosestForm($(this));
+    });
+
+    // Auto-submit when the shade helper hue behaviour changes
+    $(document).on('change', 'input[name="pct_shade_hue_mode"]', function() {
         pctSubmitClosestForm($(this));
     });
     
