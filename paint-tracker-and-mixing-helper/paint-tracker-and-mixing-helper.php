@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Paint Tracker and Mixing Helper
  * Description: Shortcodes to display your miniature paint collection, as well as a mixing and shading helper for specific colours.
- * Version: 0.7.2
+ * Version: 0.7.3
  * Author: C4813
  * Text Domain: paint-tracker-and-mixing-helper
  * Domain Path: /languages
@@ -30,7 +30,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         const META_LINK     = '_pct_link'; // legacy single link
 
         // Plugin version (used for asset cache-busting)
-        const VERSION = '0.7.2';
+        const VERSION = '0.7.3';
 
         public function __construct() {
             add_action( 'init',                    [ $this, 'register_types' ] );
@@ -191,6 +191,11 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             if ( isset( $_POST['pct_quick_edit_nonce'] ) && ! wp_verify_nonce( $_POST['pct_quick_edit_nonce'], 'pct_quick_edit' ) ) {
                 return;
             }
+            
+            // If this is a Quick Edit save, let save_quick_edit() handle it.
+            if ( isset( $_POST['pct_quick_edit_nonce'] ) ) {
+                return;
+            }
 
             // Check autosave
             if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
@@ -221,45 +226,27 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             // -------- Save multiple links --------
             $links = [];
 
-            // Preferred structured format: pct_links[0][title], pct_links[0][url], ...
-            if ( isset( $_POST['pct_links'] ) && is_array( $_POST['pct_links'] ) ) {
-                foreach ( $_POST['pct_links'] as $link ) {
-                    if ( ! is_array( $link ) ) {
-                        continue;
-                    }
-
-                    $title = isset( $link['title'] ) ? sanitize_text_field( wp_unslash( $link['title'] ) ) : '';
-                    $url   = isset( $link['url'] ) ? esc_url_raw( wp_unslash( $link['url'] ) ) : '';
-
-                    if ( $url ) {
-                        $links[] = [
-                            'title' => $title,
-                            'url'   => $url,
-                        ];
-                    }
-                }
-            }
             // Backwards/alternate format: pct_links_title[] + pct_links_url[]
-            elseif (
+            if (
                 ( isset( $_POST['pct_links_title'] ) && is_array( $_POST['pct_links_title'] ) ) ||
                 ( isset( $_POST['pct_links_url'] ) && is_array( $_POST['pct_links_url'] ) )
             ) {
                 $titles = isset( $_POST['pct_links_title'] ) ? (array) $_POST['pct_links_title'] : [];
                 $urls   = isset( $_POST['pct_links_url'] )   ? (array) $_POST['pct_links_url']   : [];
-
+            
                 // Normalise indexes
                 $titles = array_values( $titles );
                 $urls   = array_values( $urls );
-
+            
                 $max = max( count( $titles ), count( $urls ) );
-
+            
                 for ( $i = 0; $i < $max; $i++ ) {
                     $title_raw = isset( $titles[ $i ] ) ? $titles[ $i ] : '';
                     $url_raw   = isset( $urls[ $i ] )   ? $urls[ $i ]   : '';
-
+            
                     $title = sanitize_text_field( wp_unslash( $title_raw ) );
                     $url   = esc_url_raw( wp_unslash( $url_raw ) );
-
+            
                     if ( $url ) {
                         $links[] = [
                             'title' => $title,
@@ -268,7 +255,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                     }
                 }
             }
-
+            
             update_post_meta( $post_id, self::META_LINKS, $links );
 
             // If we now have structured links, remove the legacy single link
@@ -451,6 +438,15 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 self::VERSION,
                 true
             );
+            
+            // Localise strings for mixing-helper.js
+            wp_localize_script(
+                'pct_mixing_helper',
+                'pctMixingHelperL10n',
+                [
+                    'selectPaint' => __( 'Select a paint', 'paint-tracker-and-mixing-helper' ),
+                ]
+            );
 
             wp_enqueue_script(
                 'pct_shade_helper',
@@ -458,6 +454,20 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 [ 'jquery' ],
                 self::VERSION,
                 true
+            );
+            
+            // Localise strings for shade-helper.js
+            wp_localize_script(
+                'pct_shade_helper',
+                'pctShadeHelperL10n',
+                [
+                    'selectPaint'        => __( 'Select a paint to see lighter and darker mixes.', 'paint-tracker-and-mixing-helper' ),
+                    'invalidHex'         => __( 'This colour has an invalid hex value.', 'paint-tracker-and-mixing-helper' ),
+                    'noSelectedPaint'    => __( 'Could not determine the selected paint in this range.', 'paint-tracker-and-mixing-helper' ),
+                    'noRange'            => __( 'This paint is not assigned to a range.', 'paint-tracker-and-mixing-helper' ),
+                    'notEnoughPaints'    => __( 'Not enough paints in this range to build a shade ladder.', 'paint-tracker-and-mixing-helper' ),
+                    'unableToGenerate'   => __( 'Unable to generate mixes for this colour.', 'paint-tracker-and-mixing-helper' ),
+                ]
             );
         }
 
@@ -1166,18 +1176,20 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         
             // OPTIONAL FILTERS (only used if you add them to the form):
             // Limit by range
-            if ( ! empty( $_POST['pct_export_range'] ) ) {
+            $export_range = isset( $_POST['pct_export_range'] ) ? absint( $_POST['pct_export_range'] ) : 0;
+            if ( $export_range ) {
                 $args['tax_query'] = [
                     [
                         'taxonomy' => self::TAX,
                         'field'    => 'term_id',
-                        'terms'    => (int) $_POST['pct_export_range'],
+                        'terms'    => $export_range,
                     ],
                 ];
             }
         
             // Only paints marked as "on shelf"
-            if ( ! empty( $_POST['pct_export_only_shelf'] ) ) {
+            $export_only_shelf = ! empty( $_POST['pct_export_only_shelf'] );
+            if ( $export_only_shelf ) {
                 $args['meta_query'] = [
                     [
                         'key'   => self::META_ON_SHELF,
