@@ -167,6 +167,12 @@
     margin: 4px 0;
 }
 
+/* Quick/Bulk Edit: simplify for Paint Colours (hide date & password/private) */
+body.post-type-paint_color .inline-edit-date,
+body.post-type-paint_color .inline-edit-row .inline-edit-or,
+body.post-type-paint_color .inline-edit-row .inline-edit-password {
+    display: none !important;
+}
 
 /* ============================
    Mixing helper – main mixer
