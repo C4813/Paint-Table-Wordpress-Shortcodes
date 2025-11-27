@@ -219,84 +219,65 @@ jQuery(function($) {
         return Math.min(d, 360 - d);
     }
 
-    // ---------- Shade range helper logic (strict vs relaxed) ----------
-
     function updateShadeScale($container) {
         var $shadeHelper = $container.find('.pct-shade-helper');
         if (!$shadeHelper.length) {
             return;
         }
-
+    
         var $shadeColumn = $shadeHelper.find('.pct-mix-column-shade');
-        var $scale       = $shadeHelper.find('.pct-shade-scale');
-        if (!$shadeColumn.length || !$scale.length) {
+        var $scales      = $shadeHelper.find('.pct-shade-scale');
+        if (!$shadeColumn.length || !$scales.length) {
             return;
         }
-
+    
         var $paintDropdown = $shadeColumn.find('.pct-mix-dropdown-shade');
         var baseHex        = $paintDropdown.find('.pct-mix-value').val() || '';
-
-        if (!baseHex) {
+    
+        function renderEmpty($scale, key, fallback) {
             $scale.html(
                 '<p class="pct-shade-empty">' +
-                    pctL10n('selectPaint', 'Select a paint to see lighter and darker mixes.') +
+                    pctL10n(key, fallback) +
                 '</p>'
             );
+        }
+    
+        // No base colour selected yet: show the empty message in both ladders
+        if (!baseHex) {
+            $scales.each(function () {
+                renderEmpty($(this), 'selectPaint', 'Select a paint to see lighter and darker mixes.');
+            });
             return;
         }
-
+    
         var baseRgb = hexToRgb(baseHex);
         if (!baseRgb) {
-            $scale.html(
-                '<p class="pct-shade-empty">' +
-                    pctL10n('invalidHex', 'This colour has an invalid hex value.') +
-                '</p>'
-            );
+            $scales.each(function () {
+                renderEmpty($(this), 'invalidHex', 'This colour has an invalid hex value.');
+            });
             return;
         }
-
+    
         var baseLum = (0.299 * baseRgb.r + 0.587 * baseRgb.g + 0.114 * baseRgb.b) / 255;
         var baseHsl = rgbToHsl(baseRgb.r, baseRgb.g, baseRgb.b);
-
-        // find the selected option for this base colour
+    
+        // Figure out which paint option is the base, and sync activeRangeId
         var $selectedOption = $paintDropdown.find('.pct-mix-option.is-selected').first();
         if (!$selectedOption.length) {
-            // Fallback: match by hex
+            // Fallback: match by hex if the dropdown hasn't tracked the selection yet
             $paintDropdown.find('.pct-mix-option').each(function () {
-                var $opt   = $(this);
-                var optHex = ($opt.data('hex') || '').toString().toLowerCase();
-                if (optHex === baseHex.toString().toLowerCase()) {
+                var $opt = $(this);
+                var optHex = ($opt.data('hex') || '').toString();
+                if (optHex && optHex.toLowerCase() === baseHex.toLowerCase()) {
                     $selectedOption = $opt;
-                    return false; // break
+                    return false;
                 }
             });
         }
-
-        if (!$selectedOption.length) {
-            $scale.html(
-                '<p class="pct-shade-empty">' +
-                    pctL10n('noSelectedPaint', 'Could not determine the selected paint in this range.') +
-                '</p>'
-            );
-            return;
-        }
-
-        var baseLabel = $selectedOption.data('label') || '';
-
-        // Determine which range we should respect:
-        // - If there's a range dropdown, use its current value
-        // - Otherwise, fall back to the base paint's own range
-        var $rangeDropdown = $shadeHelper.find('.pct-mix-range-dropdown-shade');
-        var activeRangeId  = '';
-
-        if ($rangeDropdown.length) {
-            var val = $rangeDropdown.find('.pct-mix-range-value').val();
-            if (typeof val === 'undefined' || val === null) {
-                activeRangeId = '';
-            } else {
-                activeRangeId = String(val);
-            }
-        } else {
+    
+        var baseLabel = '';
+        if ($selectedOption.length) {
+            baseLabel = $selectedOption.data('label') || '';
             var baseRangeId = $selectedOption.data('range');
             if (typeof baseRangeId === 'undefined' || baseRangeId === null) {
                 activeRangeId = '';
@@ -304,76 +285,73 @@ jQuery(function($) {
                 activeRangeId = String(baseRangeId);
             }
         }
-
-        // Thresholds for "sane" anchors
-        var MAX_HUE_DIFF_DEG = 40;   // max hue difference for same-hue-ish colours
-        var SAT_NEUTRAL      = 0.05; // very low-sat colours = neutral-ish
-        var LUM_EPS          = 0.03; // minimum luminance difference to count as darker/lighter
-
-        // Base is considered neutral if it's very low-sat or extremely bright/dark
+    
+        // Thresholds for anchors
+        var MAX_HUE_DIFF_DEG = 40;
+        var SAT_NEUTRAL      = 0.05;
+        var LUM_EPS          = 0.03;
+    
         var baseIsNeutral =
             (baseHsl.s <= SAT_NEUTRAL) ||
             (baseLum < 0.25) ||
             (baseLum > 0.85);
-
-        // Buckets for candidates
-        var darkerSameHue   = [];
-        var lighterSameHue  = [];
-        var darkerNeutral   = [];
-        var lighterNeutral  = [];
-
-        // Collect paints into buckets
+    
+        var darkerNeutral  = [];
+        var darkerSameHue  = [];
+        var lighterNeutral = [];
+        var lighterSameHue = [];
+    
+        // Collect candidate darkeners/lighteners
         $paintDropdown.find('.pct-mix-option').each(function () {
-            var $opt     = $(this);
-            var optHex   = $opt.data('hex') || '';
-            var optRange = $opt.data('range');
-
+            var $opt = $(this);
+    
+            var optHex = ($opt.data('hex') || '').toString();
             if (!optHex) {
                 return;
             }
-
-            // If a specific range is selected, respect that.
-            // If activeRangeId === '' we are in "All" mode and accept all ranges.
-            if (activeRangeId !== '' && String(optRange) !== activeRangeId) {
+            if (optHex.toLowerCase() === baseHex.toLowerCase()) {
                 return;
             }
-
-            // Skip the base colour itself when choosing anchors
-            if (optHex.toString().toLowerCase() === baseHex.toString().toLowerCase()) {
-                return;
+    
+            // Respect currently active range, if any
+            if (activeRangeId) {
+                var optRangeId = $opt.data('range');
+                if (String(optRangeId || '') !== String(activeRangeId)) {
+                    return;
+                }
             }
-
+    
             var rgb = hexToRgb(optHex);
             if (!rgb) {
                 return;
             }
-
-            var lum = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
-            var hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+    
+            var lum   = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+            var hsl   = rgbToHsl(rgb.r, rgb.g, rgb.b);
             var label = $opt.data('label') || '';
-
-            // Neutral-ish candidates:
-            //   - very low saturation (grey/white/black)
-            //   - OR very dark
-            //   - OR very light
+    
             var isNeutralLike =
                 (hsl.s <= SAT_NEUTRAL) ||
                 (lum < 0.25) ||
                 (lum > 0.85);
-
+    
             var hueDiff = 0;
             if (!isNeutralLike && !baseIsNeutral) {
                 hueDiff = hueDistanceDeg(hsl.h, baseHsl.h);
             }
-
+    
             var isDarkerCandidate  = (lum < baseLum - LUM_EPS);
             var isLighterCandidate = (lum > baseLum + LUM_EPS);
-
-            // If base is neutral (e.g. white/grey/black), only accept neutral-ish anchors
+    
+            // If base is neutral, only neutral-ish anchors make sense
             if (baseIsNeutral && !isNeutralLike) {
                 return;
             }
-
+    
+            if (!isDarkerCandidate && !isLighterCandidate) {
+                return;
+            }
+    
             var candidate = {
                 hex: optHex,
                 lum: lum,
@@ -381,9 +359,7 @@ jQuery(function($) {
                 hueDiff: hueDiff,
                 isNeutral: isNeutralLike
             };
-
-            // RELAXED and STRICT both fill the same buckets;
-            // we choose between them later when picking anchors.
+    
             if (isDarkerCandidate) {
                 if (isNeutralLike) {
                     darkerNeutral.push(candidate);
@@ -391,7 +367,7 @@ jQuery(function($) {
                     darkerSameHue.push(candidate);
                 }
             }
-
+    
             if (isLighterCandidate) {
                 if (isNeutralLike) {
                     lighterNeutral.push(candidate);
@@ -400,7 +376,7 @@ jQuery(function($) {
                 }
             }
         });
-
+    
         function pickDarkest(list) {
             var best = null;
             list.forEach(function (c) {
@@ -410,7 +386,7 @@ jQuery(function($) {
             });
             return best;
         }
-
+    
         function pickLightest(list) {
             var best = null;
             list.forEach(function (c) {
@@ -420,175 +396,270 @@ jQuery(function($) {
             });
             return best;
         }
-
-        var darkest  = null;
-        var lightest = null;
-
-        if (shadeHueMode === 'relaxed') {
-            // RELAXED MODE:
-            //  - Prefer same-hue anchors when available
-            //  - Fall back to neutral-ish paints (black/white/grey/tinted)
-            if (baseIsNeutral) {
-                // Neutral base: only neutral anchors make sense
-                if (darkerNeutral.length) {
-                    darkest = pickDarkest(darkerNeutral);
-                }
-                if (lighterNeutral.length) {
-                    lightest = pickLightest(lighterNeutral);
-                }
-            } else {
-                if (darkerSameHue.length) {
-                    darkest = pickDarkest(darkerSameHue);
-                } else if (darkerNeutral.length) {
-                    darkest = pickDarkest(darkerNeutral);
-                }
-
-                if (lighterSameHue.length) {
-                    lightest = pickLightest(lighterSameHue);
-                } else if (lighterNeutral.length) {
-                    lightest = pickLightest(lighterNeutral);
-                }
-            }
-        } else {
-            // STRICT MODE:
-            //  - Strong protection against big hue shifts
-            //  - Neutral-ish paints are always OK, same-hue allowed too
-            if (baseIsNeutral) {
-                if (darkerNeutral.length) {
-                    darkest = pickDarkest(darkerNeutral);
-                }
-                if (lighterNeutral.length) {
-                    lightest = pickLightest(lighterNeutral);
-                }
-            } else {
-                var allDarker = darkerSameHue.concat(darkerNeutral);
-                var allLighter = lighterSameHue.concat(lighterNeutral);
-
-                if (allDarker.length) {
-                    darkest = pickDarkest(allDarker);
-                }
-                if (allLighter.length) {
-                    lightest = pickLightest(allLighter);
-                }
-            }
-        }
-
-        var hasDarker  = !!darkest;
-        var hasLighter = !!lightest;
-
-        // If we truly have nothing useful, show an error message
-        if (!hasDarker && !hasLighter) {
-            $scale.html(
-                '<p class="pct-shade-empty">' +
-                    pctL10n('notEnoughPaints', 'Not enough paints in this selection to build a shade ladder.') +
-                '</p>'
-            );
-            return;
-        }
-
-        // Ratios: [partsBase, partsOther]
-        var darkerRatios = [
-            [1, 3], // darkest: 1 base, 3 darkener
-            [1, 1],
-            [3, 1]  // closest to base: 3 base, 1 darkener
-        ];
-        var lighterRatios = [
-            [3, 1], // closest to base: 3 base, 1 lightener
-            [1, 1],
-            [1, 3]  // lightest: 1 base, 3 lightener
-        ];
-
-        var rows = [];
-
-        if (hasDarker) {
-            darkerRatios.forEach(function (pair) {
-                var mixed = mixColors(baseHex, darkest.hex, pair[0], pair[1]);
-                if (!mixed) {
-                    return;
-                }
-                rows.push({
-                    type: 'darker',
-                    ratio: pair,
-                    hex: mixed.toUpperCase(),
-                    otherLabel: darkest.label || ''
-                });
-            });
-        }
-
-        // Base in the centre
-        rows.push({
-            type: 'base',
-            ratio: null,
-            hex: baseHex.toUpperCase(),
-            baseLabel: baseLabel
-        });
-
-        if (hasLighter) {
-            lighterRatios.forEach(function (pair) {
-                var mixed = mixColors(baseHex, lightest.hex, pair[0], pair[1]);
-                if (!mixed) {
-                    return;
-                }
-                rows.push({
-                    type: 'lighter',
-                    ratio: pair,
-                    hex: mixed.toUpperCase(),
-                    otherLabel: lightest.label || ''
-                });
-            });
-        }
-
-        if (!rows.length) {
-            $scale.html(
-                '<p class="pct-shade-empty">' +
-                    pctL10n('unableToGenerate', 'Unable to generate mixes for this colour.') +
-                '</p>'
-            );
-            return;
-        }
-
-        // Build info messages for missing sides (consistent styling)
-        var infoHtml = '';
-        if (!hasDarker) {
-            infoHtml += '<p class="pct-shade-empty">' +
-                pctL10n('noDarker', 'Not enough darker paints in this selection to generate darker mixes.') +
-                '</p>';
-        }
-        if (!hasLighter) {
-            infoHtml += '<p class="pct-shade-empty">' +
-                pctL10n('noLighter', 'Not enough lighter paints in this selection to generate lighter mixes.') +
-                '</p>';
-        }
-
-        var html = '';
-        rows.forEach(function (row) {
-            var mainText = '';
-            var textColor = textColorForHex(row.hex);
-
-            if (row.type === 'base') {
-                mainText = row.baseLabel || '';
-            } else {
-                var otherLabel = row.otherLabel || '';
-                var partsBase  = row.ratio ? row.ratio[0] : 0;
-                var partsOther = row.ratio ? row.ratio[1] : 0;
-
-                if (otherLabel && baseLabel && partsBase && partsOther) {
-                    mainText = otherLabel + ' ' + partsOther + ' : ' + partsBase + ' ' + baseLabel;
+    
+        // Compute anchors for each mode so we can see when they match
+        function computeAnchors(mode) {
+            var darkest  = null;
+            var lightest = null;
+    
+            if (mode === 'relaxed') {
+                if (baseIsNeutral) {
+                    if (darkerNeutral.length) {
+                        darkest = pickDarkest(darkerNeutral);
+                    }
+                    if (lighterNeutral.length) {
+                        lightest = pickLightest(lighterNeutral);
+                    }
                 } else {
-                    mainText = row.hex;
+                    if (darkerSameHue.length) {
+                        darkest = pickDarkest(darkerSameHue);
+                    } else if (darkerNeutral.length) {
+                        darkest = pickDarkest(darkerNeutral);
+                    }
+    
+                    if (lighterSameHue.length) {
+                        lightest = pickLightest(lighterSameHue);
+                    } else if (lighterNeutral.length) {
+                        lightest = pickLightest(lighterNeutral);
+                    }
+                }
+            } else { // strict
+                if (baseIsNeutral) {
+                    if (darkerNeutral.length) {
+                        darkest = pickDarkest(darkerNeutral);
+                    }
+                    if (lighterNeutral.length) {
+                        lightest = pickLightest(lighterNeutral);
+                    }
+                } else {
+                    var allDarker  = darkerSameHue.concat(darkerNeutral);
+                    var allLighter = lighterSameHue.concat(lighterNeutral);
+    
+                    if (allDarker.length) {
+                        darkest = pickDarkest(allDarker);
+                    }
+                    if (allLighter.length) {
+                        lightest = pickLightest(allLighter);
+                    }
                 }
             }
-
-            html += '<div class="pct-shade-row pct-shade-row-' + row.type +
-                    '" style="background-color:' + row.hex + ';color:' + textColor + ';">';
-            html += '  <div class="pct-shade-meta">';
-            html += '    <div class="pct-shade-ratio">' + mainText + '</div>';
-            html += '    <div class="pct-shade-hex">' + row.hex + '</div>';
-            html += '  </div>';
-            html += '</div>';
+    
+            return { darkest: darkest, lightest: lightest };
+        }
+    
+        var anchorsStrict  = computeAnchors('strict');
+        var anchorsRelaxed = computeAnchors('relaxed');
+        
+        // Which ladders actually have darker / lighter anchors?
+        var strictHasDarker   = !!anchorsStrict.darkest;
+        var relaxedHasDarker  = !!anchorsRelaxed.darkest;
+        var strictHasLighter  = !!anchorsStrict.lightest;
+        var relaxedHasLighter = !!anchorsRelaxed.lightest;
+        
+        var mergeDarker = anchorsStrict.darkest && anchorsRelaxed.darkest &&
+            anchorsStrict.darkest.hex.toLowerCase() === anchorsRelaxed.darkest.hex.toLowerCase();
+        
+        var mergeLighter = anchorsStrict.lightest && anchorsRelaxed.lightest &&
+            anchorsStrict.lightest.hex.toLowerCase() === anchorsRelaxed.lightest.hex.toLowerCase();
+    
+        // Build HTML for one ladder (strict or relaxed)
+        function buildLadderHtmlForMode(mode) {
+            var anchors = (mode === 'relaxed') ? anchorsRelaxed : anchorsStrict;
+            var darkest  = anchors.darkest;
+            var lightest = anchors.lightest;
+    
+            var hasDarker  = !!darkest;
+            var hasLighter = !!lightest;
+    
+            if (!hasDarker && !hasLighter) {
+                return (
+                    '<p class="pct-shade-empty">' +
+                        pctL10n('notEnoughPaints', 'Not enough paints in this selection to build a shade ladder.') +
+                    '</p>'
+                );
+            }
+    
+            var darkerRatios = [
+                [1, 3],
+                [1, 1],
+                [3, 1]
+            ];
+            var lighterRatios = [
+                [3, 1],
+                [1, 1],
+                [1, 3]
+            ];
+    
+            var rows = [];
+    
+            // Dark mixes (above the primary colour)
+            if (hasDarker) {
+                darkerRatios.forEach(function (pair) {
+                    var mixed = mixColors(baseHex, darkest.hex, pair[0], pair[1]);
+                    if (!mixed) {
+                        return;
+                    }
+                    rows.push({
+                        type: 'darker',
+                        ratio: pair,
+                        hex: mixed.toUpperCase(),
+                        otherLabel: darkest.label || ''
+                    });
+                });
+    
+                // Arrow pointing down towards the primary colour
+                rows.push({
+                    type: 'arrow-up',
+                    ratio: null,
+                    hex: '',
+                    otherLabel: '',
+                    arrowDir: 'up'
+                });
+            }
+    
+            // Primary colour in the centre
+            rows.push({
+                type: 'base',
+                ratio: null,
+                hex: baseHex.toUpperCase(),
+                otherLabel: ''
+            });
+    
+            // Arrow pointing down to lighter mixes (only if we actually have them)
+            if (hasLighter) {
+                rows.push({
+                    type: 'arrow-down',
+                    ratio: null,
+                    hex: '',
+                    otherLabel: '',
+                    arrowDir: 'down'
+                });
+    
+                lighterRatios.forEach(function (pair) {
+                    var mixed = mixColors(baseHex, lightest.hex, pair[0], pair[1]);
+                    if (!mixed) {
+                        return;
+                    }
+                    rows.push({
+                        type: 'lighter',
+                        ratio: pair,
+                        hex: mixed.toUpperCase(),
+                        otherLabel: lightest.label || ''
+                    });
+                });
+            }
+    
+            if (!rows.length) {
+                return (
+                    '<p class="pct-shade-empty">' +
+                        pctL10n('unableToGenerate', 'Unable to generate mixes for this colour.') +
+                    '</p>'
+                );
+            }
+    
+            var infoHtml = '';
+            var showNoDarker, showNoLighter;
+    
+            if (mode === 'strict') {
+                // Strict column: show message whenever *strict* has none
+                showNoDarker  = !strictHasDarker;
+                showNoLighter = !strictHasLighter;
+            } else { // relaxed
+                // Relaxed column: only show if relaxed is missing it but strict has it.
+                // If both are missing, the strict column already shows the message.
+                showNoDarker  = !relaxedHasDarker && strictHasDarker;
+                showNoLighter = !relaxedHasLighter && strictHasLighter;
+            }
+    
+            if (showNoDarker) {
+                infoHtml += '<p class="pct-shade-empty">' +
+                    pctL10n('noDarker', 'Not enough darker paints in this selection to generate darker mixes.') +
+                    '</p>';
+            }
+    
+            if (showNoLighter) {
+                infoHtml += '<p class="pct-shade-empty">' +
+                    pctL10n('noLighter', 'Not enough lighter paints in this selection to generate lighter mixes.') +
+                    '</p>';
+            }
+    
+            var html = '';
+            rows.forEach(function (row) {
+                var mainHtml  = '';
+                var mergedClass = '';
+                var extraClass  = '';
+                var styleInline = '';
+    
+                if (row.type === 'arrow-up' || row.type === 'arrow-down') {
+                    // Small black arrows above/below the primary colour
+                    var symbol = (row.type === 'arrow-up') ? '▲' : '▼';
+                    mainHtml =
+                        '<div class="pct-shade-line">' +
+                            '<span class="pct-shade-arrow-icon">' + symbol + '</span>' +
+                        '</div>';
+    
+                    extraClass  = ' pct-shade-row-arrow';
+                    styleInline = 'color: #000;';
+                    row.hex     = ''; // no hex for arrow rows
+                } else if (row.type === 'base') {
+                    var baseLine = baseLabel || baseHex.toUpperCase();
+                    mainHtml = '<div class="pct-shade-line">' + baseLine + '</div>';
+    
+                    var textColorBase = textColorForHex(row.hex);
+                    styleInline = 'background-color: ' + row.hex + '; color: ' + textColorBase + ';';
+                } else if (row.ratio) {
+                    var other      = row.otherLabel || '';
+                    var baseLine2  = baseLabel || baseHex.toUpperCase();
+                    var baseParts  = row.ratio[0];
+                    var otherParts = row.ratio[1];
+    
+                    mainHtml =
+                        '<div class="pct-shade-line">' +
+                            other + ' ×' + otherParts +
+                        '</div>' +
+                        '<div class="pct-shade-line">' +
+                            baseLine2 + ' ×' + baseParts +
+                        '</div>';
+    
+                    var textColorMix = textColorForHex(row.hex);
+                    styleInline = 'background-color: ' + row.hex + '; color: ' + textColorMix + ';';
+                } else {
+                    var fallbackText = baseLabel || baseHex.toUpperCase();
+                    mainHtml = '<div class="pct-shade-line">' + fallbackText + '</div>';
+    
+                    var textColorFallback = textColorForHex(row.hex);
+                    styleInline = 'background-color: ' + row.hex + '; color: ' + textColorFallback + ';';
+                }
+    
+                if (
+                    (mergeLighter && (row.type === 'lighter' || row.type === 'arrow-down')) ||
+                    (mergeDarker  && (row.type === 'darker' || row.type === 'arrow-up'))
+                ) {
+                    mergedClass = ' pct-shade-row-merged';
+                }
+    
+                html +=
+                    '<div class="pct-shade-row pct-shade-row-' + row.type + mergedClass + extraClass + '"' +
+                        ' style="' + styleInline + '">' +
+                        '<div class="pct-shade-row-main">' + mainHtml + '</div>' +
+                        '<div class="pct-shade-row-hex">' + (row.hex || '') + '</div>' +
+                    '</div>';
+            });
+    
+            return html + infoHtml;
+        }
+    
+        // Render each ladder separately, based on its data-hue-mode
+        $scales.each(function () {
+            var $scale = $(this);
+            var mode   = $scale.data('hueMode');
+    
+            if (mode !== 'relaxed') {
+                mode = 'strict';
+            }
+    
+            $scale.html(buildLadderHtmlForMode(mode));
         });
-
-        $scale.html(infoHtml + html);
     }
 
     // ---------- Init shade helper dropdowns + default hex ----------
