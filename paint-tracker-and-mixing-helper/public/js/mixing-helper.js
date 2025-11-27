@@ -9,6 +9,15 @@ jQuery(function($) {
         return fallback;
     }
     
+    // Turn "acrylic" -> "Acrylic" etc.
+    function pctHumanBaseType(type) {
+        type = (type || '').toString().toLowerCase();
+        if (!type) {
+            return '';
+        }
+        return type.charAt(0).toUpperCase() + type.slice(1);
+    }
+
     // ---------- Colour helpers (shared via pct-color-utils.js) ----------
     
     var hexToRgb        = window.pctColorUtils.hexToRgb;
@@ -40,10 +49,28 @@ jQuery(function($) {
             // All ranges
             $options.show();
         } else {
+            var selected = String(rangeId);
             $options.each(function() {
-                var $opt      = $(this);
-                var optRange  = String($opt.data('range') || '');
-                var shouldShow = (optRange === String(rangeId));
+                var $opt = $(this);
+
+                // Prefer data-range-ids (comma-separated list of this paint's range + parents)
+                var rangeIdsAttr = $opt.attr('data-range-ids');
+                var shouldShow = false;
+
+                if (rangeIdsAttr) {
+                    var ids = String(rangeIdsAttr).split(',');
+                    for (var i = 0; i < ids.length; i++) {
+                        if ($.trim(ids[i]) === selected) {
+                            shouldShow = true;
+                            break;
+                        }
+                    }
+                } else {
+                    // Fallback: behave as before using single data-range
+                    var optRange = String($opt.data('range') || '');
+                    shouldShow = (optRange === selected);
+                }
+
                 $opt.toggle(shouldShow);
             });
         }
@@ -51,6 +78,7 @@ jQuery(function($) {
         // Reset current paint selection when range changes
         $dropdown.find('.pct-mix-value').val('');
         $dropdown.attr('data-hex', '');
+        $dropdown.removeAttr('data-base-type');
         $list.find('.pct-mix-option').removeClass('is-selected');
         $dropdown.find('.pct-mix-trigger-label').text(
             pctMixL10n('selectPaint', 'Select a paint')
@@ -88,13 +116,20 @@ jQuery(function($) {
             var $opt  = $(this);
             var hex   = $opt.data('hex') || '';
             var label = $opt.data('label') || '';
+            var baseType  = $opt.data('base-type') || '';
 
             $list.find('.pct-mix-option').removeClass('is-selected');
             $opt.addClass('is-selected');
 
             $hidden.val(hex);
             $dropdown.attr('data-hex', hex);
-
+            
+            if (baseType) {
+                $dropdown.attr('data-base-type', baseType);
+            } else {
+                $dropdown.removeAttr('data-base-type');
+            }
+    
             if (label) {
                 $label.text(label);
             }
@@ -180,6 +215,9 @@ jQuery(function($) {
         var partsLeft  = parseInt($leftParts.val(), 10);
         var partsRight = parseInt($rightParts.val(), 10);
 
+        var baseTypeLeft  = $leftDropdown.attr('data-base-type') || '';
+        var baseTypeRight = $rightDropdown.attr('data-base-type') || '';
+
         var $resultBlock  = $container.find('.pct-mix-result-block');
         var $resultHex    = $container.find('.pct-mix-result-hex');
         var $resultSwatch = $container.find('.pct-mix-result-swatch');
@@ -198,6 +236,34 @@ jQuery(function($) {
             partsLeft <= 0 || partsRight <= 0) {
 
             $resultBlock.hide();
+            return;
+        }
+
+        // If both paints have a base type and they differ, show a warning instead of a mix
+        if (baseTypeLeft && baseTypeRight && baseTypeLeft !== baseTypeRight) {
+            var niceLeft  = pctHumanBaseType(baseTypeLeft);
+            var niceRight = pctHumanBaseType(baseTypeRight);
+
+            var msgTemplate = pctMixL10n(
+                'cannotMixBaseTypes',
+                'Cannot mix {left} with {right}.'
+            );
+            var msg = msgTemplate
+                .replace('{left}', niceLeft || baseTypeLeft)
+                .replace('{right}', niceRight || baseTypeRight);
+
+            if ($resultHex.length) {
+                $resultHex.text(msg);
+            }
+
+            // Clear background / color so we don’t look like a real paint
+            $resultBlock.css({
+                'background-color': '',
+                'color': ''
+            });
+
+            // Show the block (flex)
+            $resultBlock.css('display', 'flex');
             return;
         }
 
