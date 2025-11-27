@@ -45,10 +45,28 @@ jQuery(function($) {
             // All ranges
             $options.show();
         } else {
+            var selected = String(rangeId);
             $options.each(function() {
-                var $opt      = $(this);
-                var optRange  = String($opt.data('range') || '');
-                var shouldShow = (optRange === String(rangeId));
+                var $opt = $(this);
+
+                // Prefer data-range-ids (comma-separated list of this paint's range + parents)
+                var rangeIdsAttr = $opt.attr('data-range-ids');
+                var shouldShow = false;
+
+                if (rangeIdsAttr) {
+                    var ids = String(rangeIdsAttr).split(',');
+                    for (var i = 0; i < ids.length; i++) {
+                        if ($.trim(ids[i]) === selected) {
+                            shouldShow = true;
+                            break;
+                        }
+                    }
+                } else {
+                    // Fallback: behave as before using single data-range
+                    var optRange = String($opt.data('range') || '');
+                    shouldShow = (optRange === selected);
+                }
+
                 $opt.toggle(shouldShow);
             });
         }
@@ -276,8 +294,10 @@ jQuery(function($) {
         }
     
         var baseLabel = '';
+        var baseType  = '';
         if ($selectedOption.length) {
             baseLabel = $selectedOption.data('label') || '';
+            baseType  = ($selectedOption.data('base-type') || '').toString();
             var baseRangeId = $selectedOption.data('range');
             if (typeof baseRangeId === 'undefined' || baseRangeId === null) {
                 activeRangeId = '';
@@ -317,6 +337,14 @@ jQuery(function($) {
             if (activeRangeId) {
                 var optRangeId = $opt.data('range');
                 if (String(optRangeId || '') !== String(activeRangeId)) {
+                    return;
+                }
+            }
+            
+            // Respect base type: don't mix acrylic/enamel/oil
+            if (baseType) {
+                var optBaseType = ($opt.data('base-type') || '').toString();
+                if (!optBaseType || optBaseType !== baseType) {
                     return;
                 }
             }
