@@ -233,7 +233,16 @@ jQuery(function($) {
     
         var $paintDropdown = $shadeColumn.find('.pct-mix-dropdown-shade');
         var baseHex        = $paintDropdown.find('.pct-mix-value').val() || '';
-    
+
+        // Active range comes from the Range dropdown ("" = All)
+        var $rangeDropdown = $shadeHelper.find('.pct-mix-range-dropdown-shade');
+        var activeRangeId  = '';
+        if ($rangeDropdown.length) {
+            activeRangeId = String(
+                $rangeDropdown.find('.pct-mix-range-value').val() || ''
+            );
+        }
+
         function renderEmpty($scale, key, fallback) {
             $scale.html(
                 '<p class="pct-shade-empty">' +
@@ -280,12 +289,7 @@ jQuery(function($) {
         if ($selectedOption.length) {
             baseLabel = $selectedOption.data('label') || '';
             baseType  = ($selectedOption.data('base-type') || '').toString();
-            var baseRangeId = $selectedOption.data('range');
-            if (typeof baseRangeId === 'undefined' || baseRangeId === null) {
-                activeRangeId = '';
-            } else {
-                activeRangeId = String(baseRangeId);
-            }
+            // activeRangeId is taken from the Range dropdown, not from the base paint
         }
     
         // Thresholds for anchors
@@ -329,6 +333,12 @@ jQuery(function($) {
                 if (!optBaseType || optBaseType !== baseType) {
                     return;
                 }
+            }
+
+            // Respect per-paint "exclude from shading helper" flag
+            var excludeShading = $opt.data('excludeShading');
+            if (excludeShading === 1 || excludeShading === '1') {
+                return;
             }
     
             var rgb = hexToRgb(optHex);
@@ -433,26 +443,31 @@ jQuery(function($) {
                         lightest = pickLightest(lighterNeutral);
                     }
                 }
-            } else { // strict
-                if (baseIsNeutral) {
-                    if (darkerNeutral.length) {
-                        darkest = pickDarkest(darkerNeutral);
-                    }
-                    if (lighterNeutral.length) {
-                        lightest = pickLightest(lighterNeutral);
-                    }
-                } else {
-                    var allDarker  = darkerSameHue.concat(darkerNeutral);
-                    var allLighter = lighterSameHue.concat(lighterNeutral);
-    
-                    if (allDarker.length) {
-                        darkest = pickDarkest(allDarker);
-                    }
-                    if (allLighter.length) {
-                        lightest = pickLightest(allLighter);
+                } else { // strict
+                    if (baseIsNeutral) {
+                        // Neutral bases: only neutral-ish anchors make sense
+                        if (darkerNeutral.length) {
+                            darkest = pickDarkest(darkerNeutral);
+                        }
+                        if (lighterNeutral.length) {
+                            lightest = pickLightest(lighterNeutral);
+                        }
+                    } else {
+                        // Coloured bases: in strict mode, prefer neutral blacks/whites first,
+                        // only fall back to coloured anchors if no neutral exists.
+                        if (darkerNeutral.length) {
+                            darkest = pickDarkest(darkerNeutral);
+                        } else if (darkerSameHue.length) {
+                            darkest = pickDarkest(darkerSameHue);
+                        }
+                
+                        if (lighterNeutral.length) {
+                            lightest = pickLightest(lighterNeutral);
+                        } else if (lighterSameHue.length) {
+                            lightest = pickLightest(lighterSameHue);
+                        }
                     }
                 }
-            }
     
             return { darkest: darkest, lightest: lightest };
         }
