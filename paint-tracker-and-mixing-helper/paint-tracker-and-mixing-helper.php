@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Paint Tracker and Mixing Helper
  * Description: Shortcodes to display your miniature paint collection, as well as a mixing and shading helper for specific colours.
- * Version: 0.8.3
+ * Version: 0.9.0
  * Author: C4813
  * Text Domain: paint-tracker-and-mixing-helper
  * Domain Path: /languages
@@ -23,15 +23,17 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         const TAX = 'paint_range';
 
         // Meta keys
-        const META_NUMBER    = '_pct_number';
-        const META_HEX       = '_pct_hex';
-        const META_ON_SHELF  = '_pct_on_shelf';
-        const META_LINKS     = '_pct_links';
-        const META_LINK      = '_pct_link'; // legacy single link
-        const META_BASE_TYPE = '_pct_base_type';
+        const META_NUMBER        = '_pct_number';
+        const META_HEX           = '_pct_hex';
+        const META_ON_SHELF      = '_pct_on_shelf';
+        const META_LINKS         = '_pct_links';
+        const META_LINK          = '_pct_link'; // legacy single link
+        const META_BASE_TYPE     = '_pct_base_type';
+        const META_EXCLUDE_SHADE = '_pct_exclude_shade';
+
 
         // Plugin version (used for asset cache-busting)
-        const VERSION = '0.8.3';
+        const VERSION = '0.9.0';
 
         public function __construct() {
             add_action( 'init',                    [ $this, 'register_types' ] );
@@ -142,11 +144,12 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
          * Render the meta box HTML (delegated to admin/admin-page.php).
          */
         public function render_paint_meta_box( $post ) {
-                    $number    = get_post_meta( $post->ID, self::META_NUMBER, true );
-                    $hex       = get_post_meta( $post->ID, self::META_HEX, true );
-                    $on_shelf  = get_post_meta( $post->ID, self::META_ON_SHELF, true );
-                    $links     = get_post_meta( $post->ID, self::META_LINKS, true );
-                    $base_type = get_post_meta( $post->ID, self::META_BASE_TYPE, true );
+                    $number        = get_post_meta( $post->ID, self::META_NUMBER, true );
+                    $hex           = get_post_meta( $post->ID, self::META_HEX, true );
+                    $on_shelf      = get_post_meta( $post->ID, self::META_ON_SHELF, true );
+                    $links         = get_post_meta( $post->ID, self::META_LINKS, true );
+                    $base_type     = get_post_meta( $post->ID, self::META_BASE_TYPE, true );
+                    $exclude_shade = get_post_meta( $post->ID, self::META_EXCLUDE_SHADE, true );
 
             if ( ! is_array( $links ) ) {
                 $links = [];
@@ -165,12 +168,13 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
 
             wp_nonce_field( 'pct_save_paint_meta', 'pct_paint_meta_nonce' );
 
-            $pct_admin_view = 'meta_box';
-            $pct_number     = $number;
-            $pct_hex        = $hex;
-            $pct_on_shelf   = $on_shelf;
-            $pct_links      = $links;
-            $pct_base_type  = $base_type;
+            $pct_admin_view      = 'meta_box';
+            $pct_number          = $number;
+            $pct_hex             = $hex;
+            $pct_on_shelf        = $on_shelf;
+            $pct_links           = $links;
+            $pct_base_type       = $base_type;
+            $pct_exclude_shade   = (int) $exclude_shade;
 
             include plugin_dir_path( __FILE__ ) . 'admin/admin-page.php';
 
@@ -244,7 +248,11 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             // Save on-shelf flag
             $on_shelf = isset( $_POST['pct_on_shelf'] ) ? 1 : 0;
             update_post_meta( $post_id, self::META_ON_SHELF, $on_shelf );
-        
+
+            // Save "exclude from shading helper" flag
+            $exclude_shade = isset( $_POST['pct_exclude_shade'] ) ? 1 : 0;
+            update_post_meta( $post_id, self::META_EXCLUDE_SHADE, $exclude_shade );
+
             // -------- Save multiple links (legacy format: pct_links_title[] + pct_links_url[]) --------
             $links = [];
         
@@ -314,6 +322,12 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                                 </span>
                             </label>
                             <label>
+                                <span class="title"><?php esc_html_e( 'Exclude from shading helper', 'paint-tracker-and-mixing-helper' ); ?></span>
+                                <span class="input-text-wrap">
+                                    <input type="checkbox" name="pct_exclude_shade" value="1">
+                                </span>
+                            </label>
+                            <label>
                                 <span class="title"><?php esc_html_e( 'Base type', 'paint-tracker-and-mixing-helper' ); ?></span>
                                 <span class="input-text-wrap">
                                     <select name="pct_base_type">
@@ -348,6 +362,19 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                                 <option value=""><?php esc_html_e( '— No change —', 'paint-tracker-and-mixing-helper' ); ?></option>
                                 <option value="1"><?php esc_html_e( 'On shelf', 'paint-tracker-and-mixing-helper' ); ?></option>
                                 <option value="0"><?php esc_html_e( 'Not on shelf', 'paint-tracker-and-mixing-helper' ); ?></option>
+                            </select>
+                        </span>
+                    </label>
+                </div>
+
+                <div class="inline-edit-group">
+                    <label class="alignleft">
+                        <span class="title"><?php esc_html_e( 'Shade helper', 'paint-tracker-and-mixing-helper' ); ?></span>
+                        <span class="input-text-wrap">
+                            <select name="pct_bulk_exclude_shade">
+                                <option value=""><?php esc_html_e( '— No change —', 'paint-tracker-and-mixing-helper' ); ?></option>
+                                <option value="1"><?php esc_html_e( 'Exclude from shading', 'paint-tracker-and-mixing-helper' ); ?></option>
+                                <option value="0"><?php esc_html_e( 'Include in shading', 'paint-tracker-and-mixing-helper' ); ?></option>
                             </select>
                         </span>
                     </label>
@@ -393,13 +420,14 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                     }
         
                     // At least one of our bulk fields must be present
-                    $has_on_shelf  = isset( $_REQUEST['pct_bulk_on_shelf'] );
-                    $has_base_type = isset( $_REQUEST['pct_bulk_base_type'] );
+                    $has_on_shelf   = isset( $_REQUEST['pct_bulk_on_shelf'] );
+                    $has_base_type  = isset( $_REQUEST['pct_bulk_base_type'] );
+                    $has_exclude    = isset( $_REQUEST['pct_bulk_exclude_shade'] );
         
-                    if ( ! $has_on_shelf && ! $has_base_type ) {
+                    if ( ! $has_on_shelf && ! $has_base_type && ! $has_exclude ) {
                         return;
                     }
-        
+
                     // Check nonce from bulk_edit_fields()
                     if (
                         ! isset( $_REQUEST['pct_bulk_edit_nonce'] ) ||
@@ -419,14 +447,16 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         
                     $bulk_on_shelf_val = $has_on_shelf ? (string) wp_unslash( $_REQUEST['pct_bulk_on_shelf'] ) : '';
                     $bulk_base_type    = $has_base_type ? sanitize_text_field( wp_unslash( $_REQUEST['pct_bulk_base_type'] ) ) : '';
+                    $bulk_exclude_val  = $has_exclude ? (string) wp_unslash( $_REQUEST['pct_bulk_exclude_shade'] ) : '';
         
-                    $do_on_shelf  = ( '' !== $bulk_on_shelf_val );
-                    $do_base_type = ( '' !== $bulk_base_type );
+                    $do_on_shelf   = ( '' !== $bulk_on_shelf_val );
+                    $do_base_type  = ( '' !== $bulk_base_type );
+                    $do_exclude    = ( '' !== $bulk_exclude_val );
         
-                    if ( ! $do_on_shelf && ! $do_base_type ) {
+                    if ( ! $do_on_shelf && ! $do_base_type && ! $do_exclude ) {
                         return;
                     }
-        
+
                     if ( $do_base_type ) {
                         $allowed_base_types = [ 'acrylic', 'enamel', 'oil', 'lacquer' ];
                         if ( ! in_array( $bulk_base_type, $allowed_base_types, true ) ) {
@@ -438,7 +468,12 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                     if ( $do_on_shelf ) {
                         $on_shelf = ( '1' === $bulk_on_shelf_val ) ? 1 : 0;
                     }
-        
+                    
+                    $exclude_shade = null;
+                    if ( $do_exclude ) {
+                        $exclude_shade = ( '1' === $bulk_exclude_val ) ? 1 : 0;
+                    }
+
                     $post_ids = array_map( 'absint', (array) $_REQUEST['post'] );
         
                     foreach ( $post_ids as $post_id ) {
@@ -460,6 +495,10 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         
                         if ( $do_base_type ) {
                             update_post_meta( $post_id, self::META_BASE_TYPE, $bulk_base_type );
+                        }
+
+                        if ( $do_exclude ) {
+                            update_post_meta( $post_id, self::META_EXCLUDE_SHADE, $exclude_shade );
                         }
                     }
                 }
@@ -508,6 +547,10 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                     // Save on shelf
                     $on_shelf = isset( $_POST['pct_on_shelf'] ) ? 1 : 0;
                     update_post_meta( $post_id, self::META_ON_SHELF, $on_shelf );
+
+                    // Save exclude-from-shade flag
+                    $exclude_shade = isset( $_POST['pct_exclude_shade'] ) ? 1 : 0;
+                    update_post_meta( $post_id, self::META_EXCLUDE_SHADE, $exclude_shade );
                 }
 
         /**
@@ -803,7 +846,8 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 $number    = get_post_meta( $post_id, self::META_NUMBER, true );
                 $hex       = get_post_meta( $post_id, self::META_HEX, true );
                 $base_type = get_post_meta( $post_id, self::META_BASE_TYPE, true );
-                
+                $exclude_from_shading = get_post_meta( $post_id, self::META_EXCLUDE_SHADE, true ) ? 1 : 0;
+
                 // Take the first range term for this paint (if multiple, first is fine)
                 $term_ids = wp_get_object_terms(
                     $post_id,
@@ -828,13 +872,14 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 }
                 
                 $paints[] = [
-                    'id'            => $post_id,
-                    'name'          => $name,
-                    'number'        => $number,
-                    'hex'           => $hex,
-                    'base_type'     => $base_type,
-                    'range_id'      => $range_id,
-                    'all_range_ids' => $all_range_ids,
+                    'id'               => $post_id,
+                    'name'             => $name,
+                    'number'           => $number,
+                    'hex'              => $hex,
+                    'base_type'        => $base_type,
+                    'range_id'         => $range_id,
+                    'all_range_ids'    => $all_range_ids,
+                    'exclude_shading'  => $exclude_from_shading,
                 ];
             }
 
@@ -933,7 +978,8 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 $number    = get_post_meta( $post_id, self::META_NUMBER, true );
                 $hex       = get_post_meta( $post_id, self::META_HEX, true );
                 $base_type = get_post_meta( $post_id, self::META_BASE_TYPE, true );
-                
+                $exclude_from_shading = get_post_meta( $post_id, self::META_EXCLUDE_SHADE, true ) ? 1 : 0;
+
                 $term_ids = wp_get_object_terms(
                     $post_id,
                     self::TAX,
@@ -957,13 +1003,14 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 }
                 
                 $paints[] = [
-                    'id'            => $post_id,
-                    'name'          => $name,
-                    'number'        => $number,
-                    'hex'           => $hex,
-                    'base_type'     => $base_type,
-                    'range_id'      => $range_id,
-                    'all_range_ids' => $all_range_ids,
+                    'id'               => $post_id,
+                    'name'             => $name,
+                    'number'           => $number,
+                    'hex'              => $hex,
+                    'base_type'        => $base_type,
+                    'range_id'         => $range_id,
+                    'all_range_ids'    => $all_range_ids,
+                    'exclude_shading'  => $exclude_from_shading,
                 ];
             }
 
@@ -1033,12 +1080,13 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
          */
         public static function render_mix_paint_options( $paints ) {
             foreach ( $paints as $paint ) {
-                $id        = isset( $paint['id'] ) ? (int) $paint['id'] : 0;
-                $name      = isset( $paint['name'] ) ? $paint['name'] : '';
-                $number    = isset( $paint['number'] ) ? $paint['number'] : '';
-                $hex       = isset( $paint['hex'] ) ? $paint['hex'] : '';
-                $range_id  = isset( $paint['range_id'] ) ? (int) $paint['range_id'] : 0;
-                $base_type = isset( $paint['base_type'] ) ? $paint['base_type'] : '';
+                $id                = isset( $paint['id'] ) ? (int) $paint['id'] : 0;
+                $name              = isset( $paint['name'] ) ? $paint['name'] : '';
+                $number            = isset( $paint['number'] ) ? $paint['number'] : '';
+                $hex               = isset( $paint['hex'] ) ? $paint['hex'] : '';
+                $range_id          = isset( $paint['range_id'] ) ? (int) $paint['range_id'] : 0;
+                $base_type         = isset( $paint['base_type'] ) ? $paint['base_type'] : '';
+                $exclude_shading   = ! empty( $paint['exclude_shading'] ) ? 1 : 0;
 
                 if ( '' === $name || '' === $hex ) {
                     continue;
@@ -1088,6 +1136,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                         data-range-ids="<?php echo esc_attr( $range_ids_attr ); ?>"
                         data-id="<?php echo esc_attr( $id ); ?>"
                         data-base-type="<?php echo esc_attr( $base_type ); ?>"
+                        data-exclude-shading="<?php echo esc_attr( $exclude_shading ); ?>"
                         style="<?php echo $style; ?>">
                     <span class="pct-mix-option-swatch"></span>
                     <span class="pct-mix-option-label"><?php echo esc_html( $label ); ?></span>
@@ -1521,9 +1570,12 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                     echo '—';
                 }
             } elseif ( 'pct_on_shelf' === $column ) {
-                $on_shelf = get_post_meta( $post_id, self::META_ON_SHELF, true );
+                $on_shelf      = get_post_meta( $post_id, self::META_ON_SHELF, true );
+                $exclude_shade = get_post_meta( $post_id, self::META_EXCLUDE_SHADE, true );
                 ?>
-                <span class="pct-on-shelf-value" data-on-shelf="<?php echo esc_attr( $on_shelf ); ?>">
+                <span class="pct-on-shelf-value"
+                      data-on-shelf="<?php echo esc_attr( $on_shelf ); ?>"
+                      data-exclude-shade="<?php echo esc_attr( $exclude_shade ); ?>">
                     <?php echo $on_shelf ? '✔' : '—'; ?>
                 </span>
                 <?php
