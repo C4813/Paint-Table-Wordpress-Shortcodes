@@ -20,3 +20,21 @@ body.post-type-paint_color .inline-edit-row .inline-edit-or,
 body.post-type-paint_color .inline-edit-row .inline-edit-password {
     display: none !important;
 }
+
+/* Paint Colours Quick/Bulk Edit: stack titles above inputs for cleaner wrapping */
+body.post-type-paint_color .inline-edit-col label .title,
+body.post-type-paint_color .inline-edit-group label .title {
+    display: block;
+    margin-bottom: 2px;
+}
+
+/* Keep titles on one line in Paint Colours bulk/quick edit */
+body.post-type-paint_color .inline-edit-group .title {
+    white-space: nowrap;
+}
+
+/* Make each label in the left quick-edit column sit on its own line */
+body.post-type-paint_color .inline-edit-col-left .inline-edit-col label {
+    display: block;
+    margin-bottom: 4px;
+}
