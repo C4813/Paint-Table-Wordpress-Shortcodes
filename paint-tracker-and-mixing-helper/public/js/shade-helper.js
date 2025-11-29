@@ -278,12 +278,19 @@ jQuery(function($) {
         // Thresholds for anchors
         var MAX_HUE_DIFF_DEG = 40;
         var SAT_NEUTRAL      = 0.1;
-        var LUM_EPS          = 0.03;
+        var LUM_EPS_DARK     = 0.01; // how much darker it must be to count
+        var LUM_EPS_LIGHT    = 0.03; // how much lighter it must be to count
+        // Allow greys that are very close in brightness to still be used as darkeners
+        var GREY_DARK_SLACK  = 0.03;
 
         var baseIsNeutral =
             (baseHsl.s <= SAT_NEUTRAL) ||
             (baseLum < 0.25) ||
             (baseLum > 0.85);
+
+        // Treat very dark neutral as "pure black" and very light neutral as "pure white"
+        var baseIsPureBlack = baseIsNeutral && baseLum < 0.10;
+        var baseIsPureWhite = baseIsNeutral && baseLum > 0.90;
 
         var darkerNeutral  = [];
         var darkerSameHue  = [];
@@ -299,10 +306,9 @@ jQuery(function($) {
             lighterNeutral = [];
             lighterSameHue = [];
 
-            // Collect candidate darkeners/lighteners
             $paintDropdown.find('.pct-mix-option').each(function () {
                 var $opt = $(this);
-    
+
                 var optHex = ($opt.data('hex') || '').toString();
                 if (!optHex) {
                     return;
@@ -310,7 +316,7 @@ jQuery(function($) {
                 if (optHex.toLowerCase() === baseHex.toLowerCase()) {
                     return;
                 }
-    
+
                 // Respect the active range using data-range-ids (parents include children)
                 if (activeRangeId) {
                     var inRange = window.pctColorUtils.optionMatchesRange($opt, activeRangeId);
@@ -318,7 +324,7 @@ jQuery(function($) {
                         return;
                     }
                 }
-    
+
                 // Respect base type: don't mix clearly different types (acrylic/enamel/oil/lacquer).
                 // If the candidate has no base type set, allow it so older paints without metadata still work.
                 if (baseType) {
@@ -328,7 +334,7 @@ jQuery(function($) {
                         return;
                     }
                 }
-    
+
                 // Respect per-paint "exclude from shading helper" flag
                 var excludeShading = $opt.data('excludeShading');
                 if (excludeShading === 1 || excludeShading === '1') {
@@ -339,30 +345,46 @@ jQuery(function($) {
                     return;
                 }
 
-            var lum   = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
-            var hsl   = rgbToHsl(rgb.r, rgb.g, rgb.b);
-            var label = $opt.data('label') || '';
+                var lum   = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+                var hsl   = rgbToHsl(rgb.r, rgb.g, rgb.b);
+                var label = $opt.data('label') || '';
 
-            // True greys / blacks / whites = low saturation
-            var isGrey = (hsl.s <= SAT_NEUTRAL);
+                // True greys / blacks / whites = low saturation
+                var isGrey = (hsl.s <= SAT_NEUTRAL);
 
-            // “Neutral-like” for grouping: greys OR very dark OR very light
-            var isNeutralLike =
-                isGrey ||
-                (lum < 0.25) ||
-                (lum > 0.85);
+                // “Neutral-like” for grouping: greys OR very dark OR very light
+                var isNeutralLike =
+                    isGrey ||
+                    (lum < 0.25) ||
+                    (lum > 0.85);
 
                 var hueDiff = 0;
                 if (!isNeutralLike && !baseIsNeutral) {
                     hueDiff = hueDistanceDeg(hsl.h, baseHsl.h);
                 }
 
-                var isDarkerCandidate  = (lum < baseLum - LUM_EPS);
-                var isLighterCandidate = (lum > baseLum + LUM_EPS);
+                var isDarkerCandidate  = (lum < baseLum - LUM_EPS_DARK);
+                var isLighterCandidate = (lum > baseLum + LUM_EPS_LIGHT);
 
                 // If base is neutral, only neutral-ish anchors make sense
                 if (baseIsNeutral && !isNeutralLike) {
                     return;
+                }
+
+                // For "pure" extremes:
+                // - pure black: don't try to find anything darker
+                // - pure white: don't try to find anything lighter
+                if (baseIsPureBlack) {
+                    isDarkerCandidate = false;
+                } else if (baseIsPureWhite) {
+                    isLighterCandidate = false;
+                } else if (!isDarkerCandidate && !isLighterCandidate && isGrey) {
+                    // Special rule for greys: if a grey is very close in brightness to the base,
+                    // still allow it as a darker candidate so true blacks get used to shade
+                    // saturated colours (e.g. Khorne Red).
+                    if (lum <= baseLum + GREY_DARK_SLACK) {
+                        isDarkerCandidate = true;
+                    }
                 }
 
                 if (!isDarkerCandidate && !isLighterCandidate) {
@@ -430,7 +452,7 @@ jQuery(function($) {
             });
             return best;
         }
-        
+
         function pickDarkestGreyFirst(list) {
             var greys = [];
             list.forEach(function (c) {
@@ -485,15 +507,16 @@ jQuery(function($) {
                 }
             } else { // strict
                 if (baseIsNeutral) {
-                    // Neutral bases: only neutral-ish anchors make sense
+                    // Neutral bases (including pure black / white):
+                    // in strict mode, prefer grey-ish blacks/whites.
                     if (darkerNeutral.length) {
-                        darkest = pickDarkest(darkerNeutral);
+                        darkest = pickDarkestGreyFirst(darkerNeutral);
                     }
                     if (lighterNeutral.length) {
-                        lightest = pickLightest(lighterNeutral);
+                        lightest = pickLightestGreyFirst(lighterNeutral);
                     }
                 } else {
-                    // Coloured bases: in strict mode, prefer *grey-ish* blacks/whites first,
+                    // Coloured bases: in strict mode, prefer grey-ish blacks/whites first,
                     // only fall back to other neutrals / coloured anchors if needed.
                     if (darkerNeutral.length) {
                         darkest = pickDarkestGreyFirst(darkerNeutral);
@@ -508,7 +531,6 @@ jQuery(function($) {
                     }
                 }
             }
-
             return { darkest: darkest, lightest: lightest };
         }
 
