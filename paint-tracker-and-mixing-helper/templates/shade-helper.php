@@ -15,6 +15,47 @@ if ( ! isset( $pct_ranges, $pct_paints ) || empty( $pct_ranges ) || empty( $pct_
 
 $default_shade_hex = isset( $pct_default_shade_hex ) ? $pct_default_shade_hex : '';
 $default_shade_id  = isset( $pct_default_shade_id ) ? (int) $pct_default_shade_id : 0;
+
+/**
+ * Build a parent → children map for ranges, preserving the order
+ * coming from get_terms() (which is already ordered by term_order).
+ */
+$pct_ranges_by_parent = [];
+foreach ( $pct_ranges as $range ) {
+    $parent_id = (int) $range->parent;
+    if ( ! isset( $pct_ranges_by_parent[ $parent_id ] ) ) {
+        $pct_ranges_by_parent[ $parent_id ] = [];
+    }
+    $pct_ranges_by_parent[ $parent_id ][] = $range;
+}
+
+/**
+ * Recursive renderer for hierarchical range options.
+ *
+ * Guarded with function_exists so it can coexist with the version
+ * defined in mixing-helper.php.
+ */
+if ( ! function_exists( 'pct_render_range_options_hierarchical' ) ) {
+    function pct_render_range_options_hierarchical( $parent_id, $map, $depth = 0 ) {
+        if ( empty( $map[ $parent_id ] ) ) {
+            return;
+        }
+
+        foreach ( $map[ $parent_id ] as $term ) {
+            $indent = str_repeat( '— ', max( 0, (int) $depth ) );
+            ?>
+            <div class="pct-mix-range-option"
+                 data-range="<?php echo esc_attr( $term->term_id ); ?>">
+                <span class="pct-mix-option-label">
+                    <?php echo esc_html( $indent . $term->name ); ?>
+                </span>
+            </div>
+            <?php
+            // Recurse into children
+            pct_render_range_options_hierarchical( (int) $term->term_id, $map, $depth + 1 );
+        }
+    }
+}
 ?>
 
 <!-- ========== SHADE RANGE HELPER (SEPARATE TOOL) ========== -->
@@ -46,14 +87,10 @@ $default_shade_id  = isset( $pct_default_shade_id ) ? (int) $pct_default_shade_i
                                         <?php esc_html_e( 'All', 'paint-tracker-and-mixing-helper' ); ?>
                                     </span>
                                 </div>
-                                <?php foreach ( $pct_ranges as $range ) : ?>
-                                    <div class="pct-mix-range-option"
-                                        data-range="<?php echo esc_attr( $range->term_id ); ?>">
-                                        <span class="pct-mix-option-label">
-                                            <?php echo esc_html( $range->name ); ?>
-                                        </span>
-                                    </div>
-                                <?php endforeach; ?>
+                                <?php
+                                // Top-level parents (parent_id = 0)
+                                pct_render_range_options_hierarchical( 0, $pct_ranges_by_parent );
+                                ?>
                             </div>
                         </div>
                     </label>
@@ -81,7 +118,6 @@ $default_shade_id  = isset( $pct_default_shade_id ) ? (int) $pct_default_shade_i
             </div>
 
             <div class="pct-shade-ladders">
-            
                 <div class="pct-shade-ladder pct-shade-ladder--strict">
                     <div class="pct-shade-scale pct-shade-scale--strict"
                         aria-live="polite"
@@ -91,7 +127,7 @@ $default_shade_id  = isset( $pct_default_shade_id ) ? (int) $pct_default_shade_i
                         </p>
                     </div>
                 </div>
-            
+
                 <div class="pct-shade-ladder pct-shade-ladder--relaxed">
                     <div class="pct-shade-scale pct-shade-scale--relaxed"
                         aria-live="polite"
@@ -101,7 +137,6 @@ $default_shade_id  = isset( $pct_default_shade_id ) ? (int) $pct_default_shade_i
                         </p>
                     </div>
                 </div>
-            
             </div><!-- /.pct-shade-ladders -->
 
         </div>
