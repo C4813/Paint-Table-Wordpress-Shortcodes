@@ -319,15 +319,33 @@ jQuery(function($) {
                 return;
             }
     
-            // Respect currently active range, if any
+            // Respect currently active range, if any (using data-range-ids so parents include children)
             if (activeRangeId) {
-                var optRangeId = $opt.data('range');
-                if (String(optRangeId || '') !== String(activeRangeId)) {
+                var idsAttr = ($opt.attr('data-range-ids') || '').toString();
+                var inRange = false;
+
+                if (idsAttr) {
+                    var parts = idsAttr.split(',');
+                    for (var i = 0; i < parts.length; i++) {
+                        if (String(parts[i]).trim() === activeRangeId) {
+                            inRange = true;
+                            break;
+                        }
+                    }
+                } else {
+                    // Fallback to single range id if data-range-ids is missing
+                    var optRangeId = $opt.data('range');
+                    if (String(optRangeId || '') === activeRangeId) {
+                        inRange = true;
+                    }
+                }
+
+                if (!inRange) {
                     return;
                 }
             }
             
-            // Respect base type: don't mix acrylic/enamel/oil
+            // Respect base type: don't mix acrylic/enamel/oil/lacquer
             if (baseType) {
                 var optBaseType = ($opt.data('base-type') || '').toString();
                 if (!optBaseType || optBaseType !== baseType) {
@@ -443,31 +461,31 @@ jQuery(function($) {
                         lightest = pickLightest(lighterNeutral);
                     }
                 }
-                } else { // strict
-                    if (baseIsNeutral) {
-                        // Neutral bases: only neutral-ish anchors make sense
-                        if (darkerNeutral.length) {
-                            darkest = pickDarkest(darkerNeutral);
-                        }
-                        if (lighterNeutral.length) {
-                            lightest = pickLightest(lighterNeutral);
-                        }
-                    } else {
-                        // Coloured bases: in strict mode, prefer neutral blacks/whites first,
-                        // only fall back to coloured anchors if no neutral exists.
-                        if (darkerNeutral.length) {
-                            darkest = pickDarkest(darkerNeutral);
-                        } else if (darkerSameHue.length) {
-                            darkest = pickDarkest(darkerSameHue);
-                        }
-                
-                        if (lighterNeutral.length) {
-                            lightest = pickLightest(lighterNeutral);
-                        } else if (lighterSameHue.length) {
-                            lightest = pickLightest(lighterSameHue);
-                        }
+            } else { // strict
+                if (baseIsNeutral) {
+                    // Neutral bases: only neutral-ish anchors make sense
+                    if (darkerNeutral.length) {
+                        darkest = pickDarkest(darkerNeutral);
+                    }
+                    if (lighterNeutral.length) {
+                        lightest = pickLightest(lighterNeutral);
+                    }
+                } else {
+                    // Coloured bases: in strict mode, prefer neutral blacks/whites first,
+                    // only fall back to coloured anchors if no neutral exists.
+                    if (darkerNeutral.length) {
+                        darkest = pickDarkest(darkerNeutral);
+                    } else if (darkerSameHue.length) {
+                        darkest = pickDarkest(darkerSameHue);
+                    }
+            
+                    if (lighterNeutral.length) {
+                        lightest = pickLightest(lighterNeutral);
+                    } else if (lighterSameHue.length) {
+                        lightest = pickLightest(lighterSameHue);
                     }
                 }
+            }
     
             return { darkest: darkest, lightest: lightest };
         }
