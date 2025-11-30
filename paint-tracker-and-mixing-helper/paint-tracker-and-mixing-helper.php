@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Paint Tracker and Mixing Helper
  * Description: Shortcodes to display your miniature paint collection, as well as a mixing and shading helper for specific colours.
- * Version: 0.9.2
+ * Version: 0.10.0
  * Author: C4813
  * Text Domain: paint-tracker-and-mixing-helper
  * Domain Path: /languages
@@ -33,7 +33,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
 
 
         // Plugin version (used for asset cache-busting)
-        const VERSION = '0.9.2';
+        const VERSION = '0.10.0';
 
         public function __construct() {
             add_action( 'init',                    [ $this, 'register_types' ] );
@@ -296,109 +296,32 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         /**
          * Output Quick Edit fields.
          */
-        public function quick_edit_fields( $column_name, $post_type ) {
+        function quick_edit_fields( $column_name, $post_type ) {
                     if ( self::CPT !== $post_type || 'pct_number' !== $column_name ) {
                         return;
                     }
-                    ?>
-                    <fieldset class="inline-edit-col-left">
-                        <div class="inline-edit-col">
-                            <label>
-                                <span class="title"><?php esc_html_e( 'Code / Type', 'paint-tracker-and-mixing-helper' ); ?></span>
-                                <span class="input-text-wrap">
-                                    <input type="text" name="pct_number" class="ptitle" value="">
-                                </span>
-                            </label>
-                            <label>
-                                <span class="title"><?php esc_html_e( 'Hex', 'paint-tracker-and-mixing-helper' ); ?></span>
-                                <span class="input-text-wrap">
-                                    <input type="text" name="pct_hex" class="ptitle" value="">
-                                </span>
-                            </label>
-                            <label>
-                                <span class="title"><?php esc_html_e( 'On Shelf?', 'paint-tracker-and-mixing-helper' ); ?></span>
-                                <span class="input-text-wrap">
-                                    <input type="checkbox" name="pct_on_shelf" value="1">
-                                </span>
-                            </label>
-                            <label>
-                                <span class="title"><?php esc_html_e( 'Exclude from shading helper', 'paint-tracker-and-mixing-helper' ); ?></span>
-                                <span class="input-text-wrap">
-                                    <input type="checkbox" name="pct_exclude_shade" value="1">
-                                </span>
-                            </label>
-                            <label>
-                                <span class="title"><?php esc_html_e( 'Base type', 'paint-tracker-and-mixing-helper' ); ?></span>
-                                <span class="input-text-wrap">
-                                    <select name="pct_base_type">
-                                        <option value=""><?php esc_html_e( '— No change —', 'paint-tracker-and-mixing-helper' ); ?></option>
-                                        <option value="acrylic"><?php esc_html_e( 'Acrylic', 'paint-tracker-and-mixing-helper' ); ?></option>
-                                        <option value="enamel"><?php esc_html_e( 'Enamel', 'paint-tracker-and-mixing-helper' ); ?></option>
-                                        <option value="oil"><?php esc_html_e( 'Oil', 'paint-tracker-and-mixing-helper' ); ?></option>
-                                        <option value="lacquer"><?php esc_html_e( 'Lacquer', 'paint-tracker-and-mixing-helper' ); ?></option>
-                                    </select>
-                                </span>
-                            </label>
-                        </div>
-                    </fieldset>
-                    <?php
-                    wp_nonce_field( 'pct_quick_edit', 'pct_quick_edit_nonce' );
-                }
         
+                    $template = plugin_dir_path( __FILE__ ) . 'admin/quick-edit-fields.php';
+        
+                    if ( file_exists( $template ) ) {
+                        include $template;
+                    }
+                }
+
         /**
          * Output Bulk Edit field for On Shelf.
          */
-        public function bulk_edit_fields( $column_name, $post_type ) {
-            if ( self::CPT !== $post_type || 'pct_number' !== $column_name ) {
-                return;
-            }
-            ?>
-            <fieldset class="inline-edit-col-right">
-                <div class="inline-edit-group">
-                    <label class="alignleft">
-                        <span class="title"><?php esc_html_e( 'On Shelf?', 'paint-tracker-and-mixing-helper' ); ?></span>
-                        <span class="input-text-wrap">
-                            <select name="pct_bulk_on_shelf">
-                                <option value=""><?php esc_html_e( '— No change —', 'paint-tracker-and-mixing-helper' ); ?></option>
-                                <option value="1"><?php esc_html_e( 'On shelf', 'paint-tracker-and-mixing-helper' ); ?></option>
-                                <option value="0"><?php esc_html_e( 'Not on shelf', 'paint-tracker-and-mixing-helper' ); ?></option>
-                            </select>
-                        </span>
-                    </label>
-                </div>
-
-                <div class="inline-edit-group">
-                    <label class="alignleft">
-                        <span class="title"><?php esc_html_e( 'Shade helper', 'paint-tracker-and-mixing-helper' ); ?></span>
-                        <span class="input-text-wrap">
-                            <select name="pct_bulk_exclude_shade">
-                                <option value=""><?php esc_html_e( '— No change —', 'paint-tracker-and-mixing-helper' ); ?></option>
-                                <option value="1"><?php esc_html_e( 'Exclude from shading', 'paint-tracker-and-mixing-helper' ); ?></option>
-                                <option value="0"><?php esc_html_e( 'Include in shading', 'paint-tracker-and-mixing-helper' ); ?></option>
-                            </select>
-                        </span>
-                    </label>
-                </div>
-
-                <div class="inline-edit-group">
-                    <label class="alignleft">
-                        <span class="title"><?php esc_html_e( 'Base type', 'paint-tracker-and-mixing-helper' ); ?></span>
-                        <span class="input-text-wrap">
-                            <select name="pct_bulk_base_type">
-                                <option value=""><?php esc_html_e( '— No change —', 'paint-tracker-and-mixing-helper' ); ?></option>
-                                <option value="acrylic"><?php esc_html_e( 'Set to Acrylic', 'paint-tracker-and-mixing-helper' ); ?></option>
-                                <option value="enamel"><?php esc_html_e( 'Set to Enamel', 'paint-tracker-and-mixing-helper' ); ?></option>
-                                <option value="oil"><?php esc_html_e( 'Set to Oil', 'paint-tracker-and-mixing-helper' ); ?></option>
-                                <option value="lacquer"><?php esc_html_e( 'Set to Lacquer', 'paint-tracker-and-mixing-helper' ); ?></option>
-                            </select>
-                        </span>
-                    </label>
-                </div>
-            </fieldset>
-            <?php
-            wp_nonce_field( 'pct_bulk_edit', 'pct_bulk_edit_nonce' );
-        }
-
+        function bulk_edit_fields( $column_name, $post_type ) {
+                    if ( self::CPT !== $post_type || 'pct_number' !== $column_name ) {
+                        return;
+                    }
+        
+                    $template = plugin_dir_path( __FILE__ ) . 'admin/bulk-edit-fields.php';
+        
+                    if ( file_exists( $template ) ) {
+                        include $template;
+                    }
+                }
 
         /**
          * Handle bulk "On Shelf?" updates from the list table bulk edit UI.
@@ -598,93 +521,103 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         /**
          * Enqueue front-end stylesheet + helper JS.
          */
-        public function enqueue_frontend_assets() {
-            // Only load assets on singular posts/pages that actually use our shortcodes.
-            if ( ! is_singular() ) {
-                return;
-            }
+        function enqueue_frontend_assets() {
+                    // Only load assets on singular posts/pages that actually use our shortcodes.
+                    if ( ! is_singular() ) {
+                        return;
+                    }
         
-            global $post;
+                    global $post;
         
-            if ( ! ( $post instanceof WP_Post ) ) {
-                return;
-            }
+                    if ( ! ( $post instanceof WP_Post ) ) {
+                        return;
+                    }
         
-            if (
-                ! has_shortcode( $post->post_content, 'paint_table' ) &&
-                ! has_shortcode( $post->post_content, 'mixing-helper' ) &&
-                ! has_shortcode( $post->post_content, 'shade-helper' )
-            ) {
-                return;
-            }
-
-            wp_enqueue_style(
-                'pct_paint_table',
-                plugin_dir_url( __FILE__ ) . 'public/css/style.css',
-                [],
-                self::VERSION
-            );
-            
-            wp_enqueue_script(
-                'pct_paint_table_js',
-                plugin_dir_url( __FILE__ ) . 'public/js/paint-table.js',
-                [],
-                self::VERSION,
-                true
-            );
-
-            wp_enqueue_script(
-                'pct_color_utils',
-                plugin_dir_url( __FILE__ ) . 'public/js/pct-color-utils.js',
-                [],
-                self::VERSION,
-                true
-            );
-
-            wp_enqueue_script(
-                'pct_mixing_helper',
-                plugin_dir_url( __FILE__ ) . 'public/js/mixing-helper.js',
-                [ 'jquery', 'pct_color_utils' ],
-                self::VERSION,
-                true
-            );
-            
-            // Localise strings for mixing-helper.js
-            wp_localize_script(
-                'pct_mixing_helper',
-                'pctMixingHelperL10n',
-                [
-                    'selectPaint' => __( 'Select a paint', 'paint-tracker-and-mixing-helper' ),
-                ]
-            );
-
-            wp_enqueue_script(
-                'pct_shade_helper',
-                plugin_dir_url( __FILE__ ) . 'public/js/shade-helper.js',
-                [ 'jquery', 'pct_color_utils' ],
-                self::VERSION,
-                true
-            );
-            
-            $shade_mode = get_option( 'pct_shade_hue_mode', 'strict' );
-            
-            // Localise strings for shade-helper.js
-            wp_localize_script(
-                'pct_shade_helper',
-                'pctShadeHelperL10n',
-                [
-                    'selectPaint'      => __( 'Select a paint to see lighter and darker mixes.', 'paint-tracker-and-mixing-helper' ),
-                    'invalidHex'       => __( 'This colour has an invalid hex value.', 'paint-tracker-and-mixing-helper' ),
-                    'noSelectedPaint'  => __( 'Could not determine the selected paint in this range.', 'paint-tracker-and-mixing-helper' ),
-                    'noRange'          => __( 'This paint is not assigned to a range.', 'paint-tracker-and-mixing-helper' ),
-                    'notEnoughPaints'  => __( 'Not enough paints in this range to build a shade ladder.', 'paint-tracker-and-mixing-helper' ),
-                    'unableToGenerate' => __( 'Unable to generate mixes for this colour.', 'paint-tracker-and-mixing-helper' ),
-                    'noDarker'         => __( 'Not enough darker paints in this selection to generate darker mixes.', 'paint-tracker-and-mixing-helper' ),
-                    'noLighter'        => __( 'Not enough lighter paints in this selection to generate lighter mixes.', 'paint-tracker-and-mixing-helper' ),
-                    'hueMode'          => $shade_mode, // 'strict' or 'relaxed'
-                ]
-            );
-        }
+                    $content    = $post->post_content;
+                    $has_paint  = has_shortcode( $content, 'paint_table' );
+                    $has_mixing = has_shortcode( $content, 'mixing-helper' );
+                    $has_shade  = has_shortcode( $content, 'shade-helper' );
+        
+                    if ( ! $has_paint && ! $has_mixing && ! $has_shade ) {
+                        return;
+                    }
+        
+                    // Shared frontend styles (used by all three UIs).
+                    wp_enqueue_style(
+                        'pct_style',
+                        plugin_dir_url( __FILE__ ) . 'public/css/style.css',
+                        [],
+                        self::VERSION
+                    );
+        
+                    // Paint table only.
+                    if ( $has_paint ) {
+                        wp_enqueue_script(
+                            'pct_paint_table_js',
+                            plugin_dir_url( __FILE__ ) . 'public/js/paint-table.js',
+                            [ 'jquery' ],
+                            self::VERSION,
+                            true
+                        );
+                    }
+        
+                    // Colour utility helpers (used by mixing + shading).
+                    if ( $has_mixing || $has_shade ) {
+                        wp_enqueue_script(
+                            'pct_color_utils',
+                            plugin_dir_url( __FILE__ ) . 'public/js/pct-color-utils.js',
+                            [ 'jquery' ],
+                            self::VERSION,
+                            true
+                        );
+                    }
+        
+                    // Mixing helper.
+                    if ( $has_mixing ) {
+                        wp_enqueue_script(
+                            'pct_mixing_helper',
+                            plugin_dir_url( __FILE__ ) . 'public/js/mixing-helper.js',
+                            [ 'jquery', 'pct_color_utils' ],
+                            self::VERSION,
+                            true
+                        );
+        
+                        wp_localize_script(
+                            'pct_mixing_helper',
+                            'pctMixingHelperL10n',
+                            [
+                                'selectPaint' => __( 'Select a paint', 'paint-tracker-and-mixing-helper' ),
+                            ]
+                        );
+                    }
+        
+                    // Shade helper.
+                    if ( $has_shade ) {
+                        wp_enqueue_script(
+                            'pct_shade_helper',
+                            plugin_dir_url( __FILE__ ) . 'public/js/shade-helper.js',
+                            [ 'jquery', 'pct_color_utils' ],
+                            self::VERSION,
+                            true
+                        );
+        
+                        $shade_mode = get_option( 'pct_shade_hue_mode', 'strict' );
+        
+                        wp_localize_script(
+                            'pct_shade_helper',
+                            'pctShadeHelperL10n',
+                            [
+                                'selectPaint'      => __( 'Select a paint to generate lighter and darker mixes.', 'paint-tracker-and-mixing-helper' ),
+                                'invalidHex'       => __( 'This colour has an invalid hex value.', 'paint-tracker-and-mixing-helper' ),
+                                'noSelectedPaint'  => __( 'Could not determine the selected paint in this range.', 'paint-tracker-and-mixing-helper' ),
+                                'noRange'          => __( 'This paint is not assigned to a range.', 'paint-tracker-and-mixing-helper' ),
+                                'notEnoughPaints'  => __( 'Not enough paints in this range to build a shade ladder.', 'paint-tracker-and-mixing-helper' ),
+                                'unableToGenerate' => __( 'Unable to generate mixes for this colour.', 'paint-tracker-and-mixing-helper' ),
+                                'shadeMode'        => $shade_mode,
+                            ]
+                        );
+                    }
+                }
 
         /**
          * Shortcode handler:
@@ -1406,7 +1339,50 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 if ( '' === $title ) {
                     continue;
                 }
-
+                
+                // Check for an existing paint with the same title, code/type, base type and hex.
+                // If found, skip this row to avoid duplicates.
+                $existing_posts = get_posts(
+                    [
+                        'post_type'      => self::CPT,
+                        'post_status'    => [ 'publish', 'draft', 'pending' ],
+                        'posts_per_page' => 10,
+                        'fields'         => 'ids',
+                        'meta_query'     => [
+                            'relation' => 'AND',
+                            [
+                                'key'   => self::META_NUMBER,
+                                'value' => $number,
+                            ],
+                            [
+                                'key'   => self::META_HEX,
+                                'value' => $hex,
+                            ],
+                            [
+                                'key'   => self::META_BASE_TYPE,
+                                'value' => $base_type,
+                            ],
+                        ],
+                    ]
+                );
+                
+                $duplicate_found = false;
+                
+                if ( ! empty( $existing_posts ) ) {
+                    foreach ( $existing_posts as $existing_id ) {
+                        $existing_title = get_the_title( $existing_id );
+                        if ( $existing_title === $title ) {
+                            $duplicate_found = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if ( $duplicate_found ) {
+                    // Already have this exact paint; skip importing this row.
+                    continue;
+                }
+                
                 $post_id = wp_insert_post(
                     [
                         'post_type'   => self::CPT,
