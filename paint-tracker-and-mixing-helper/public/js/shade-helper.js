@@ -1,30 +1,13 @@
 jQuery(function($) {
-
-    // ---------- L10n helper ----------
-
-    function pctL10n(key, fallback) {
-        if (window.pctShadeHelperL10n && typeof window.pctShadeHelperL10n[key] === 'string') {
-            return window.pctShadeHelperL10n[key];
-        }
-        return fallback;
-    }
+    
+    var pctL10n           = window.pctColorUtils.makeL10nHelper('pctShadeHelperL10n');
+    var closeAllDropdowns = window.pctColorUtils.closeAllDropdowns;
 
     // ---------- Colour helpers (shared via pct-color-utils.js) ----------
 
     var hexToRgb        = window.pctColorUtils.hexToRgb;
     var mixColors       = window.pctColorUtils.mixColors;
     var textColorForHex = window.pctColorUtils.textColorForHex;
-
-    // ---------- Shared dropdown helpers (shade helper) ----------
-
-    function closeAllDropdowns() {
-        $('.pct-mix-dropdown, .pct-mix-range-dropdown').each(function() {
-            var $dd = $(this);
-            $dd.removeClass('pct-mix-open');
-            $dd.find('.pct-mix-list')
-               .attr('hidden', 'hidden');
-        });
-    }
 
     $(document).on('click', function() {
         closeAllDropdowns();
