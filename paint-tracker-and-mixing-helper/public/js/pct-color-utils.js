@@ -90,12 +90,43 @@
 
         return false;
     }
+    
+    // ---------- Shared UI helpers ----------
+
+    // Make a simple localization helper for a given global object.
+    // Example: makeL10nHelper('pctMixingHelperL10n')
+    function makeL10nHelper(objectName) {
+        return function (key, fallback) {
+            var source = window[objectName] || {};
+            if (typeof source[key] === 'string') {
+                return source[key];
+            }
+            return fallback;
+        };
+    }
+
+    // Close all mix and range dropdowns on the page.
+    function closeAllDropdowns() {
+        var $ = window.jQuery;
+        if (!$) {
+            return;
+        }
+
+        $('.pct-mix-dropdown, .pct-mix-range-dropdown').each(function() {
+            var $dd = $(this);
+            $dd.removeClass('pct-mix-open');
+            $dd.find('.pct-mix-list')
+               .attr('hidden', 'hidden');
+        });
+    }
 
     // Expose helpers
-    window.pctColorUtils.hexToRgb        = hexToRgb;
-    window.pctColorUtils.rgbToHex        = rgbToHex;
-    window.pctColorUtils.mixColors       = mixColors;
-    window.pctColorUtils.textColorForHex = textColorForHex;
+    window.pctColorUtils.hexToRgb           = hexToRgb;
+    window.pctColorUtils.rgbToHex           = rgbToHex;
+    window.pctColorUtils.mixColors          = mixColors;
+    window.pctColorUtils.textColorForHex    = textColorForHex;
     window.pctColorUtils.optionMatchesRange = optionMatchesRange;
+    window.pctColorUtils.makeL10nHelper     = makeL10nHelper;
+    window.pctColorUtils.closeAllDropdowns  = closeAllDropdowns;
 
 })(window);
