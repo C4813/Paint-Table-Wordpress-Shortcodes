@@ -1,26 +1,20 @@
 === Paint Tracker and Mixing Helper ===
-Contributors:
-Tags: paint, colours, mixing, miniature, hobby, table
+Contributors: C4813
+Tags: paint, colours, mixing, miniature, hobby
 Requires at least: 6.0
 Tested up to: 6.7
+Requires PHP: 7.4
 Stable tag: 0.10.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 == Description ==
 
-Paint Tracker and Mixing Helper lets you keep a structured list of your miniature paints in WordPress and use that data on the front end via three shortcodes:
+Hobby Paint Tracker and Mixing/Shading Helper.
 
 * A paint table (`[paint_table]`) for listing paints from a range.
 * A two-paint mixing helper (`[mixing-helper]`) for mixing two paints and previewing the result.
 * A shade helper (`[shade-helper]`) that suggests suitable highlight and shadow colours for a base paint.
-
-Version 0.9.0 adds:
-* A new **“Exclude from shading helper”** toggle per paint.
-* New Quick Edit and Bulk Edit support for the exclude option.
-* Shade-helper logic updated to skip excluded paints.
-* Table rows with no hex now get a watermark and are no longer clickable.
-* Improved Quick Edit field population.
 
 = Data model =
 
@@ -110,23 +104,17 @@ Yes.
 
 Yes — override `public/css/style.css` in your theme.
 
+== Screenshots ==
+
+1. Paint table shortcode using colour dots/swatches
+2. Paint table shortcode using row highlight
+3. Two-paint mixing helper UI.
+4. Shade helper
+5. Admin paint editor with base type and links.
+
 == Changelog ==
 
-= 0.9.0 =
-
-* Added **Exclude from shading helper** meta.
-* Added Quick Edit + Bulk Edit support for exclude option.
-* Shade helper now ignores excluded paints.
-* Table rows without a hex value now show a “No colour hex” watermark and are not clickable.
-* Fixed Quick Edit not populating fields reliably.
-* Improved layout of Quick Edit and Bulk Edit fields.
-* General stability and UI adjustments.
-
 == Upgrade Notice ==
-
-= 0.9.0 =
-
-Adds a new exclude-from-shading feature, UI improvements, safer Quick Edit behaviour and better shading recommendations.
 
 == License ==
 
