@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Paint Tracker and Mixing Helper
  * Description: Shortcodes to display your miniature paint collection, as well as a mixing and shading helper for specific colours.
- * Version: 0.10.2
+ * Version: 0.10.3
  * Author: C4813
  * Text Domain: paint-tracker-and-mixing-helper
  * Domain Path: /languages
@@ -33,7 +33,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
 
 
         // Plugin version (used for asset cache-busting)
-        const VERSION = '0.10.2';
+        const VERSION = '0.10.3';
 
         public function __construct() {
             add_action( 'init',                    [ $this, 'register_types' ] );
@@ -193,7 +193,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         
             // Quick Edit is handled in save_quick_edit(); just verify nonce and bail.
             if ( isset( $_POST['pct_quick_edit_nonce'] ) ) {
-                $quick_edit_nonce = wp_unslash( $_POST['pct_quick_edit_nonce'] );
+                $quick_edit_nonce = sanitize_text_field( wp_unslash( $_POST['pct_quick_edit_nonce'] ) );
                 if ( ! wp_verify_nonce( $quick_edit_nonce, 'pct_quick_edit' ) ) {
                     return;
                 }
@@ -204,10 +204,11 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             if ( ! isset( $_POST['pct_paint_meta_nonce'] ) ) {
                 return;
             }
-            $paint_meta_nonce = wp_unslash( $_POST['pct_paint_meta_nonce'] );
+            $paint_meta_nonce = sanitize_text_field( wp_unslash( $_POST['pct_paint_meta_nonce'] ) );
             if ( ! wp_verify_nonce( $paint_meta_nonce, 'pct_save_paint_meta' ) ) {
                 return;
             }
+
             // ----- Normal edit screen save below -----
             
             // Save number (code / type)
@@ -244,27 +245,28 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
 
             // -------- Save multiple links (legacy format: pct_links_title[] + pct_links_url[]) --------
             $links = [];
-        
+            
             if (
                 ( isset( $_POST['pct_links_title'] ) && is_array( $_POST['pct_links_title'] ) ) ||
                 ( isset( $_POST['pct_links_url'] ) && is_array( $_POST['pct_links_url'] ) )
             ) {
-                $titles = isset( $_POST['pct_links_title'] ) ? (array) wp_unslash( $_POST['pct_links_title'] ) : [];
-                $urls   = isset( $_POST['pct_links_url'] )   ? (array) wp_unslash( $_POST['pct_links_url'] )   : [];
-        
+                $titles_raw = isset( $_POST['pct_links_title'] ) ? (array) wp_unslash( $_POST['pct_links_title'] ) : [];
+                $urls_raw   = isset( $_POST['pct_links_url'] )   ? (array) wp_unslash( $_POST['pct_links_url'] )   : [];
+            
+                // Sanitise arrays
+                $titles = array_map( 'sanitize_text_field', $titles_raw );
+                $urls   = array_map( 'esc_url_raw', $urls_raw );
+            
                 // Normalise indexes
                 $titles = array_values( $titles );
                 $urls   = array_values( $urls );
-        
-                $max = max( count( $titles ), count( $urls ) );
-        
-                for ( $i = 0; $i < $max; $i++ ) {
-                    $title_raw = isset( $titles[ $i ] ) ? $titles[ $i ] : '';
-                    $url_raw   = isset( $urls[ $i ] )   ? $urls[ $i ]   : '';
 
-                    $title = sanitize_text_field( $title_raw );
-                    $url   = esc_url_raw( $url_raw );
-        
+                $max = max( count( $titles ), count( $urls ) );
+                
+                for ( $i = 0; $i < $max; $i++ ) {
+                    $title = isset( $titles[ $i ] ) ? $titles[ $i ] : '';
+                    $url   = isset( $urls[ $i ] )   ? $urls[ $i ]   : '';
+                
                     if ( $url ) {
                         $links[] = [
                             'title' => $title,
@@ -344,11 +346,10 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                     if ( ! isset( $_REQUEST['pct_bulk_edit_nonce'] ) ) {
                         return;
                     }
-                    $bulk_nonce = wp_unslash( $_REQUEST['pct_bulk_edit_nonce'] );
+                    $bulk_nonce = sanitize_text_field( wp_unslash( $_REQUEST['pct_bulk_edit_nonce'] ) );
                     if ( ! wp_verify_nonce( $bulk_nonce, 'pct_bulk_edit' ) ) {
                         return;
                     }
-
                     // Posts selected
                     if ( empty( $_REQUEST['post'] ) || ! is_array( $_REQUEST['post'] ) ) {
                         return;
@@ -358,9 +359,9 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                         return;
                     }
         
-                    $bulk_on_shelf_val = $has_on_shelf ? (string) wp_unslash( $_REQUEST['pct_bulk_on_shelf'] ) : '';
+                    $bulk_on_shelf_val = $has_on_shelf ? sanitize_text_field( wp_unslash( $_REQUEST['pct_bulk_on_shelf'] ) ) : '';
                     $bulk_base_type    = $has_base_type ? sanitize_text_field( wp_unslash( $_REQUEST['pct_bulk_base_type'] ) ) : '';
-                    $bulk_exclude_val  = $has_exclude ? (string) wp_unslash( $_REQUEST['pct_bulk_exclude_shade'] ) : '';
+                    $bulk_exclude_val  = $has_exclude ? sanitize_text_field( wp_unslash( $_REQUEST['pct_bulk_exclude_shade'] ) ) : '';
         
                     $do_on_shelf   = ( '' !== $bulk_on_shelf_val );
                     $do_base_type  = ( '' !== $bulk_base_type );
@@ -423,11 +424,10 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                     if ( ! isset( $_POST['pct_quick_edit_nonce'] ) ) {
                         return;
                     }
-                    $quick_edit_nonce = wp_unslash( $_POST['pct_quick_edit_nonce'] );
+                    $quick_edit_nonce = sanitize_text_field( wp_unslash( $_POST['pct_quick_edit_nonce'] ) );
                     if ( ! wp_verify_nonce( $quick_edit_nonce, 'pct_quick_edit' ) ) {
                         return;
                     }
-
                     if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
                         return;
                     }
@@ -836,24 +836,30 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
          * Shows the shade range helper as a standalone tool.
          */
         public function shortcode_shade_helper( $atts ) {
-            // Optional: default shade hex and paint ID passed via URL when coming from [paint_table]
-            $default_shade_hex = '';
-            $default_shade_id  = 0;
-
-            // These GET parameters only affect default UI state and do not modify data.
-            // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-            if ( isset( $_GET['pct_shade_hex'] ) ) {
-                $raw_hex = wp_unslash( $_GET['pct_shade_hex'] );
-                $raw_hex = sanitize_text_field( $raw_hex );
-                $raw_hex = trim( $raw_hex );
-            
-                if ( '' !== $raw_hex ) {
-                    if ( $raw_hex[0] !== '#' ) {
-                        $raw_hex = '#' . $raw_hex;
-                    }
-                    $default_shade_hex = $raw_hex;
+        // Optional: default shade hex and paint ID passed via URL when coming from [paint_table]
+        $default_shade_hex = '';
+        $default_shade_id  = 0;
+        
+        // These GET parameters only affect default UI state and do not modify data.
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        if ( isset( $_GET['pct_shade_id'] ) ) {
+            $default_shade_id = absint( $_GET['pct_shade_id'] );
+        }
+        
+        // These GET parameters only affect default UI state and do not modify data.
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        if ( isset( $_GET['pct_shade_hex'] ) ) {
+            $raw_hex = wp_unslash( $_GET['pct_shade_hex'] );
+            $raw_hex = sanitize_text_field( $raw_hex );
+            $raw_hex = trim( $raw_hex );
+        
+            if ( '' !== $raw_hex ) {
+                if ( $raw_hex[0] !== '#' ) {
+                    $raw_hex = '#' . $raw_hex;
                 }
+                $default_shade_hex = $raw_hex;
             }
+        }
 
             // Get all paint ranges
             $ranges = get_terms(
@@ -1133,7 +1139,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
 
             // Save if the Info & Settings nonce is present and valid
             if ( isset( $_POST['pct_info_settings_nonce'] ) ) {
-                $info_nonce = wp_unslash( $_POST['pct_info_settings_nonce'] );
+                $info_nonce = sanitize_text_field( wp_unslash( $_POST['pct_info_settings_nonce'] ) );
                 if ( wp_verify_nonce( $info_nonce, 'pct_info_settings' ) ) {
                     // Shading page URL
                     if ( isset( $_POST['pct_mixing_page_url'] ) ) {
@@ -1264,14 +1270,14 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 wp_die( esc_html__( 'You do not have permission to export paints.', 'paint-tracker-and-mixing-helper' ) );
             }
         
-            if ( ! isset( $_POST['pct_export_nonce'] ) ) {
-                wp_die( esc_html__( 'Security check failed.', 'paint-tracker-and-mixing-helper' ) );
-            }
-            
-            $export_nonce = wp_unslash( $_POST['pct_export_nonce'] );
-            if ( ! wp_verify_nonce( $export_nonce, 'pct_export_paints' ) ) {
-                wp_die( esc_html__( 'Security check failed.', 'paint-tracker-and-mixing-helper' ) );
-            }
+        if ( ! isset( $_POST['pct_export_nonce'] ) ) {
+            wp_die( esc_html__( 'Security check failed.', 'paint-tracker-and-mixing-helper' ) );
+        }
+        
+        $export_nonce = sanitize_text_field( wp_unslash( $_POST['pct_export_nonce'] ) );
+        if ( ! wp_verify_nonce( $export_nonce, 'pct_export_paints' ) ) {
+            wp_die( esc_html__( 'Security check failed.', 'paint-tracker-and-mixing-helper' ) );
+        }
 
             $this->export_csv();
             exit;
