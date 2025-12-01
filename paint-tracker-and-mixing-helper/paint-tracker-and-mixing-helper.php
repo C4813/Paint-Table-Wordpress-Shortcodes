@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Paint Tracker and Mixing Helper
  * Description: Shortcodes to display your miniature paint collection, as well as a mixing and shading helper for specific colours.
- * Version: 0.10.1
+ * Version: 0.10.2
  * Author: C4813
  * Text Domain: paint-tracker-and-mixing-helper
  * Domain Path: /languages
@@ -33,11 +33,10 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
 
 
         // Plugin version (used for asset cache-busting)
-        const VERSION = '0.10.1';
+        const VERSION = '0.10.2';
 
         public function __construct() {
             add_action( 'init',                    [ $this, 'register_types' ] );
-            add_action( 'init',                    [ $this, 'load_textdomain' ] );
 
             // Metaboxes & saving
             add_action( 'add_meta_boxes',          [ $this, 'add_meta_boxes' ] );
@@ -73,17 +72,6 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             add_action( 'manage_' . self::CPT . '_posts_custom_column',    [ $this, 'manage_custom_column' ], 10, 2 );
             add_filter( 'manage_edit-' . self::CPT . '_sortable_columns',  [ $this, 'sortable_columns' ] );
             add_action( 'pre_get_posts',                                   [ $this, 'handle_admin_sorting' ] );
-        }
-
-        /**
-         * Load plugin textdomain.
-         */
-        public function load_textdomain() {
-            load_plugin_textdomain(
-                'paint-tracker-and-mixing-helper',
-                false,
-                dirname( plugin_basename( __FILE__ ) ) . '/languages'
-            );
         }
 
         /**
@@ -205,20 +193,21 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         
             // Quick Edit is handled in save_quick_edit(); just verify nonce and bail.
             if ( isset( $_POST['pct_quick_edit_nonce'] ) ) {
-                if ( ! wp_verify_nonce( $_POST['pct_quick_edit_nonce'], 'pct_quick_edit' ) ) {
+                $quick_edit_nonce = wp_unslash( $_POST['pct_quick_edit_nonce'] );
+                if ( ! wp_verify_nonce( $quick_edit_nonce, 'pct_quick_edit' ) ) {
                     return;
                 }
                 return;
             }
-        
+
             // Normal edit screen must have meta box nonce
-            if (
-                ! isset( $_POST['pct_paint_meta_nonce'] ) ||
-                ! wp_verify_nonce( $_POST['pct_paint_meta_nonce'], 'pct_save_paint_meta' )
-            ) {
+            if ( ! isset( $_POST['pct_paint_meta_nonce'] ) ) {
                 return;
             }
-        
+            $paint_meta_nonce = wp_unslash( $_POST['pct_paint_meta_nonce'] );
+            if ( ! wp_verify_nonce( $paint_meta_nonce, 'pct_save_paint_meta' ) ) {
+                return;
+            }
             // ----- Normal edit screen save below -----
             
             // Save number (code / type)
@@ -260,8 +249,8 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 ( isset( $_POST['pct_links_title'] ) && is_array( $_POST['pct_links_title'] ) ) ||
                 ( isset( $_POST['pct_links_url'] ) && is_array( $_POST['pct_links_url'] ) )
             ) {
-                $titles = isset( $_POST['pct_links_title'] ) ? (array) $_POST['pct_links_title'] : [];
-                $urls   = isset( $_POST['pct_links_url'] )   ? (array) $_POST['pct_links_url']   : [];
+                $titles = isset( $_POST['pct_links_title'] ) ? (array) wp_unslash( $_POST['pct_links_title'] ) : [];
+                $urls   = isset( $_POST['pct_links_url'] )   ? (array) wp_unslash( $_POST['pct_links_url'] )   : [];
         
                 // Normalise indexes
                 $titles = array_values( $titles );
@@ -272,9 +261,9 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 for ( $i = 0; $i < $max; $i++ ) {
                     $title_raw = isset( $titles[ $i ] ) ? $titles[ $i ] : '';
                     $url_raw   = isset( $urls[ $i ] )   ? $urls[ $i ]   : '';
-        
-                    $title = sanitize_text_field( wp_unslash( $title_raw ) );
-                    $url   = esc_url_raw( wp_unslash( $url_raw ) );
+
+                    $title = sanitize_text_field( $title_raw );
+                    $url   = esc_url_raw( $url_raw );
         
                     if ( $url ) {
                         $links[] = [
@@ -352,13 +341,14 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                     }
 
                     // Check nonce from bulk_edit_fields()
-                    if (
-                        ! isset( $_REQUEST['pct_bulk_edit_nonce'] ) ||
-                        ! wp_verify_nonce( $_REQUEST['pct_bulk_edit_nonce'], 'pct_bulk_edit' )
-                    ) {
+                    if ( ! isset( $_REQUEST['pct_bulk_edit_nonce'] ) ) {
                         return;
                     }
-        
+                    $bulk_nonce = wp_unslash( $_REQUEST['pct_bulk_edit_nonce'] );
+                    if ( ! wp_verify_nonce( $bulk_nonce, 'pct_bulk_edit' ) ) {
+                        return;
+                    }
+
                     // Posts selected
                     if ( empty( $_REQUEST['post'] ) || ! is_array( $_REQUEST['post'] ) ) {
                         return;
@@ -429,11 +419,15 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         /**
          * Save Quick Edit values.
          */
-        public function save_quick_edit( $post_id, $post ) {
-                    if ( ! isset( $_POST['pct_quick_edit_nonce'] ) || ! wp_verify_nonce( $_POST['pct_quick_edit_nonce'], 'pct_quick_edit' ) ) {
+                public function save_quick_edit( $post_id, $post ) {
+                    if ( ! isset( $_POST['pct_quick_edit_nonce'] ) ) {
                         return;
                     }
-        
+                    $quick_edit_nonce = wp_unslash( $_POST['pct_quick_edit_nonce'] );
+                    if ( ! wp_verify_nonce( $quick_edit_nonce, 'pct_quick_edit' ) ) {
+                        return;
+                    }
+
                     if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
                         return;
                     }
@@ -846,19 +840,14 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             $default_shade_hex = '';
             $default_shade_id  = 0;
 
-            if ( isset( $_GET['pct_shade_id'] ) ) {
-                $default_shade_id = absint( $_GET['pct_shade_id'] );
-            }
-
+            // These GET parameters only affect default UI state and do not modify data.
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             if ( isset( $_GET['pct_shade_hex'] ) ) {
-                // Decode any %23 etc, then sanitise/trim
                 $raw_hex = wp_unslash( $_GET['pct_shade_hex'] );
-                $raw_hex = rawurldecode( $raw_hex );
                 $raw_hex = sanitize_text_field( $raw_hex );
                 $raw_hex = trim( $raw_hex );
-
+            
                 if ( '' !== $raw_hex ) {
-                    // Ensure it starts with '#'
                     if ( $raw_hex[0] !== '#' ) {
                         $raw_hex = '#' . $raw_hex;
                     }
@@ -1063,8 +1052,8 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
 
                 $style = sprintf(
                     'background-color:%1$s;color:%2$s;',
-                    esc_attr( $hex ),
-                    esc_attr( $text_color )
+                    $hex,
+                    $text_color
                 );
                 ?>
                 <div class="pct-mix-option"
@@ -1075,7 +1064,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                         data-id="<?php echo esc_attr( $id ); ?>"
                         data-base-type="<?php echo esc_attr( $base_type ); ?>"
                         data-exclude-shading="<?php echo esc_attr( $exclude_shading ); ?>"
-                        style="<?php echo $style; ?>">
+                        style="<?php echo esc_attr( $style ); ?>">
                     <span class="pct-mix-option-swatch"></span>
                     <span class="pct-mix-option-label"><?php echo esc_html( $label ); ?></span>
                 </div>
@@ -1143,34 +1132,33 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             $shade_mode = get_option( 'pct_shade_hue_mode', 'strict' ); // 'strict' or 'relaxed'
 
             // Save if the Info & Settings nonce is present and valid
-            if (
-                isset( $_POST['pct_info_settings_nonce'] )
-                && wp_verify_nonce( $_POST['pct_info_settings_nonce'], 'pct_info_settings' )
-            ) {
-                // Shading page URL (may or may not be present depending on which form posted)
-                if ( isset( $_POST['pct_mixing_page_url'] ) ) {
-                    $info_url = esc_url_raw( wp_unslash( $_POST['pct_mixing_page_url'] ) );
-                    update_option( 'pct_mixing_page_url', $info_url );
+            if ( isset( $_POST['pct_info_settings_nonce'] ) ) {
+                $info_nonce = wp_unslash( $_POST['pct_info_settings_nonce'] );
+                if ( wp_verify_nonce( $info_nonce, 'pct_info_settings' ) ) {
+                    // Shading page URL
+                    if ( isset( $_POST['pct_mixing_page_url'] ) ) {
+                        $info_url = esc_url_raw( wp_unslash( $_POST['pct_mixing_page_url'] ) );
+                        update_option( 'pct_mixing_page_url', $info_url );
+                    }
+            
+                    // Paint table display mode
+                    if ( isset( $_POST['pct_table_display_mode'] ) ) {
+                        $mode_raw = sanitize_text_field( wp_unslash( $_POST['pct_table_display_mode'] ) );
+                        $mode     = in_array( $mode_raw, [ 'dots', 'rows' ], true ) ? $mode_raw : 'dots';
+                        update_option( 'pct_table_display_mode', $mode );
+                    }
+            
+                    // Shade helper hue behaviour (strict vs relaxed)
+                    if ( isset( $_POST['pct_shade_hue_mode'] ) ) {
+                        $shade_raw  = sanitize_text_field( wp_unslash( $_POST['pct_shade_hue_mode'] ) );
+                        $shade_mode = in_array( $shade_raw, [ 'strict', 'relaxed' ], true ) ? $shade_raw : 'strict';
+                        update_option( 'pct_shade_hue_mode', $shade_mode );
+                    }
+            
+                    $message = __( 'Settings saved.', 'paint-tracker-and-mixing-helper' );
                 }
-
-                // Paint table display mode (may or may not be present depending on which form posted)
-                if ( isset( $_POST['pct_table_display_mode'] ) ) {
-                    $mode_raw = sanitize_text_field( wp_unslash( $_POST['pct_table_display_mode'] ) );
-                    $mode     = in_array( $mode_raw, [ 'dots', 'rows' ], true ) ? $mode_raw : 'dots';
-                    update_option( 'pct_table_display_mode', $mode );
-                }
-                
-                // Shade helper hue behaviour (strict vs relaxed)
-                if ( isset( $_POST['pct_shade_hue_mode'] ) ) {
-                    $shade_raw  = sanitize_text_field( wp_unslash( $_POST['pct_shade_hue_mode'] ) );
-                    $shade_mode = in_array( $shade_raw, [ 'strict', 'relaxed' ], true ) ? $shade_raw : 'strict';
-                    update_option( 'pct_shade_hue_mode', $shade_mode );
-                }
-
-                $message = __( 'Settings saved.', 'paint-tracker-and-mixing-helper' );
             }
-
-            // Pass values to the template
+            
             $pct_admin_view           = 'info_settings';
             $pct_info_message         = $message;
             $pct_info_url             = $info_url;
@@ -1178,6 +1166,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             $pct_shade_hue_mode       = $shade_mode;
             
             include plugin_dir_path( __FILE__ ) . 'admin/admin-page.php';
+
         }
 
         /**
@@ -1275,10 +1264,15 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 wp_die( esc_html__( 'You do not have permission to export paints.', 'paint-tracker-and-mixing-helper' ) );
             }
         
-            if ( ! isset( $_POST['pct_export_nonce'] ) || ! wp_verify_nonce( $_POST['pct_export_nonce'], 'pct_export_paints' ) ) {
+            if ( ! isset( $_POST['pct_export_nonce'] ) ) {
                 wp_die( esc_html__( 'Security check failed.', 'paint-tracker-and-mixing-helper' ) );
             }
-        
+            
+            $export_nonce = wp_unslash( $_POST['pct_export_nonce'] );
+            if ( ! wp_verify_nonce( $export_nonce, 'pct_export_paints' ) ) {
+                wp_die( esc_html__( 'Security check failed.', 'paint-tracker-and-mixing-helper' ) );
+            }
+
             $this->export_csv();
             exit;
         }
@@ -1293,7 +1287,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 return new WP_Error( 'pct_csv_missing', __( 'CSV file is missing or not readable.', 'paint-tracker-and-mixing-helper' ) );
             }
 
-            $handle = fopen( $file_path, 'r' );
+            $handle = fopen( $file_path, 'r' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
             if ( ! $handle ) {
                 return new WP_Error( 'pct_csv_open', __( 'Unable to open CSV file.', 'paint-tracker-and-mixing-helper' ) );
             }
@@ -1304,7 +1298,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             // Optional: if first row is header, detect & skip
             $first_row = fgetcsv( $handle );
             if ( ! $first_row ) {
-                fclose( $handle );
+                fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
                 return new WP_Error( 'pct_csv_empty', __( 'CSV file is empty.', 'paint-tracker-and-mixing-helper' ) );
             }
 
@@ -1411,7 +1405,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 $imported++;
             }
 
-            fclose( $handle );
+            fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 
             return $imported;
         }
@@ -1425,14 +1419,14 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 ob_end_clean();
             }
         
-            $filename = 'paint-export-' . date( 'Y-m-d-H-i-s' ) . '.csv';
+            $filename = 'paint-export-' . gmdate( 'Y-m-d-H-i-s' ) . '.csv';
         
             // Send headers
             nocache_headers();
             header( 'Content-Type: text/csv; charset=utf-8' );
             header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
         
-            $output = fopen( 'php://output', 'w' );
+            $output = fopen( 'php://output', 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
         
             // Header row
             fputcsv( $output, [ 'title', 'number', 'hex', 'base_type', 'on_shelf', 'ranges' ] );
@@ -1448,7 +1442,8 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         
             // OPTIONAL FILTERS (only used if you add them to the form):
             // Limit by range
-            $export_range = isset( $_POST['pct_export_range'] ) ? absint( $_POST['pct_export_range'] ) : 0;
+            // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            $export_range = isset( $_POST['pct_export_range'] ) ? absint( wp_unslash( $_POST['pct_export_range'] ) ) : 0;
             if ( $export_range ) {
                 $args['tax_query'] = [
                     [
@@ -1460,6 +1455,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             }
         
             // Only paints marked as "on shelf"
+            // phpcs:ignore WordPress.Security.NonceVerification.Missing
             $export_only_shelf = ! empty( $_POST['pct_export_only_shelf'] );
             if ( $export_only_shelf ) {
                 $args['meta_query'] = [
@@ -1503,7 +1499,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 wp_reset_postdata();
             }
         
-            fclose( $output );
+            fclose( $output ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
         }
 
         /**
