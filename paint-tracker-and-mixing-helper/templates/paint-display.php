@@ -203,7 +203,7 @@ $container_class_attr = implode( ' ', array_map( 'sanitize_html_class', $contain
 
                                 if ( '' === $ltitle ) {
                                     if ( $total_links > 1 ) {
-                                        /* translators: %d: index of the paint link (starting from 2). */
+                                        /* translators: %d: index number of this paint link. */
                                         $ltitle = sprintf(
                                             __( 'View %d', 'paint-tracker-and-mixing-helper' ),
                                             $i + 1
