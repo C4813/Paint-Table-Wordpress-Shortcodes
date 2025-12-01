@@ -23,9 +23,11 @@ $default_shade_id  = isset( $pct_default_shade_id ) ? (int) $pct_default_shade_i
 $pct_ranges_by_parent = [];
 foreach ( $pct_ranges as $range ) {
     $parent_id = (int) $range->parent;
+
     if ( ! isset( $pct_ranges_by_parent[ $parent_id ] ) ) {
         $pct_ranges_by_parent[ $parent_id ] = [];
     }
+
     $pct_ranges_by_parent[ $parent_id ][] = $range;
 }
 
@@ -51,7 +53,6 @@ if ( ! function_exists( 'pct_render_range_options_hierarchical' ) ) {
                 </span>
             </div>
             <?php
-            // Recurse into children
             pct_render_range_options_hierarchical( (int) $term->term_id, $map, $depth + 1 );
         }
     }
@@ -88,7 +89,7 @@ if ( ! function_exists( 'pct_render_range_options_hierarchical' ) ) {
                                     </span>
                                 </div>
                                 <?php
-                                // Top-level parents (parent_id = 0)
+                                // Top-level parents (parent_id = 0).
                                 pct_render_range_options_hierarchical( 0, $pct_ranges_by_parent );
                                 ?>
                             </div>
@@ -120,8 +121,8 @@ if ( ! function_exists( 'pct_render_range_options_hierarchical' ) ) {
             <div class="pct-shade-ladders">
                 <div class="pct-shade-ladder pct-shade-ladder--strict">
                     <div class="pct-shade-scale pct-shade-scale--strict"
-                        aria-live="polite"
-                        data-hue-mode="strict">
+                         aria-live="polite"
+                         data-hue-mode="strict">
                         <p class="pct-shade-empty">
                             <?php esc_html_e( 'Select a paint to see lighter and darker mixes.', 'paint-tracker-and-mixing-helper' ); ?>
                         </p>
@@ -130,15 +131,14 @@ if ( ! function_exists( 'pct_render_range_options_hierarchical' ) ) {
 
                 <div class="pct-shade-ladder pct-shade-ladder--relaxed">
                     <div class="pct-shade-scale pct-shade-scale--relaxed"
-                        aria-live="polite"
-                        data-hue-mode="relaxed">
+                         aria-live="polite"
+                         data-hue-mode="relaxed">
                         <p class="pct-shade-empty">
                             <?php esc_html_e( 'Select a paint to see lighter and darker mixes.', 'paint-tracker-and-mixing-helper' ); ?>
                         </p>
                     </div>
                 </div>
             </div><!-- /.pct-shade-ladders -->
-
         </div>
     </div>
 </div><!-- /.pct-shade-container -->
