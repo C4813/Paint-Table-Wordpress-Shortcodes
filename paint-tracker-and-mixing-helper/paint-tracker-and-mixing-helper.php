@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Paint Tracker and Mixing Helper
  * Description: Shortcodes to display your miniature paint collection, as well as a mixing and shading helper for specific colours.
- * Version: 0.10.3
+ * Version: 0.10.4
  * Author: C4813
  * Text Domain: paint-tracker-and-mixing-helper
  * Domain Path: /languages
@@ -33,7 +33,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
 
 
         // Plugin version (used for asset cache-busting)
-        const VERSION = '0.10.3';
+        const VERSION = '0.10.4';
 
         public function __construct() {
             add_action( 'init',                    [ $this, 'register_types' ] );
@@ -73,7 +73,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             add_filter( 'manage_edit-' . self::CPT . '_sortable_columns',  [ $this, 'sortable_columns' ] );
             add_action( 'pre_get_posts',                                   [ $this, 'handle_admin_sorting' ] );
         }
-
+        
         /**
          * Register custom post type & taxonomy.
          */
@@ -245,28 +245,41 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
 
             // -------- Save multiple links (legacy format: pct_links_title[] + pct_links_url[]) --------
             $links = [];
-            
-            if (
-                ( isset( $_POST['pct_links_title'] ) && is_array( $_POST['pct_links_title'] ) ) ||
-                ( isset( $_POST['pct_links_url'] ) && is_array( $_POST['pct_links_url'] ) )
-            ) {
-                $titles_raw = isset( $_POST['pct_links_title'] ) ? (array) wp_unslash( $_POST['pct_links_title'] ) : [];
-                $urls_raw   = isset( $_POST['pct_links_url'] )   ? (array) wp_unslash( $_POST['pct_links_url'] )   : [];
-            
+
+            $raw_titles = [];
+            $raw_urls   = [];
+
+            if ( isset( $_POST['pct_links_title'] ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+                $raw_titles = wp_unslash( $_POST['pct_links_title'] );
+            }
+
+            if ( isset( $_POST['pct_links_url'] ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+                $raw_urls = wp_unslash( $_POST['pct_links_url'] );
+            }
+
+            if ( ! is_array( $raw_titles ) ) {
+                $raw_titles = [];
+            }
+
+            if ( ! is_array( $raw_urls ) ) {
+                $raw_urls = [];
+            }
+
+            if ( ! empty( $raw_titles ) || ! empty( $raw_urls ) ) {
                 // Sanitise arrays
-                $titles = array_map( 'sanitize_text_field', $titles_raw );
-                $urls   = array_map( 'esc_url_raw', $urls_raw );
-            
+                $titles = array_map( 'sanitize_text_field', (array) $raw_titles );
+                $urls   = array_map( 'esc_url_raw', (array) $raw_urls );
+
                 // Normalise indexes
                 $titles = array_values( $titles );
                 $urls   = array_values( $urls );
 
                 $max = max( count( $titles ), count( $urls ) );
-                
+
                 for ( $i = 0; $i < $max; $i++ ) {
                     $title = isset( $titles[ $i ] ) ? $titles[ $i ] : '';
                     $url   = isset( $urls[ $i ] )   ? $urls[ $i ]   : '';
-                
+
                     if ( $url ) {
                         $links[] = [
                             'title' => $title,
@@ -275,13 +288,14 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                     }
                 }
             }
-        
+
             update_post_meta( $post_id, self::META_LINKS, $links );
-        
+
             // If we now have structured links, remove the legacy single link
             if ( ! empty( $links ) ) {
                 delete_post_meta( $post_id, self::META_LINK );
             }
+
         }
 
         /**
@@ -836,30 +850,28 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
          * Shows the shade range helper as a standalone tool.
          */
         public function shortcode_shade_helper( $atts ) {
-        // Optional: default shade hex and paint ID passed via URL when coming from [paint_table]
-        $default_shade_hex = '';
-        $default_shade_id  = 0;
-        
-        // These GET parameters only affect default UI state and do not modify data.
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-        if ( isset( $_GET['pct_shade_id'] ) ) {
-            $default_shade_id = absint( $_GET['pct_shade_id'] );
-        }
-        
-        // These GET parameters only affect default UI state and do not modify data.
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-        if ( isset( $_GET['pct_shade_hex'] ) ) {
-            $raw_hex = wp_unslash( $_GET['pct_shade_hex'] );
-            $raw_hex = sanitize_text_field( $raw_hex );
-            $raw_hex = trim( $raw_hex );
-        
-            if ( '' !== $raw_hex ) {
-                if ( $raw_hex[0] !== '#' ) {
-                    $raw_hex = '#' . $raw_hex;
-                }
-                $default_shade_hex = $raw_hex;
+            // Optional: default shade hex and paint ID passed via URL when coming from [paint_table]
+            $default_shade_hex = '';
+            $default_shade_id  = 0;
+
+            // These GET parameters only affect default UI state and do not modify data.
+            if ( isset( $_GET['pct_shade_id'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $default_shade_id = absint( $_GET['pct_shade_id'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
             }
-        }
+
+            // These GET parameters only affect default UI state and do not modify data.
+            if ( isset( $_GET['pct_shade_hex'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $raw_hex = wp_unslash( $_GET['pct_shade_hex'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+                $raw_hex = sanitize_text_field( $raw_hex );
+                $raw_hex = trim( $raw_hex );
+
+                if ( '' !== $raw_hex ) {
+                    if ( $raw_hex[0] !== '#' ) {
+                        $raw_hex = '#' . $raw_hex;
+                    }
+                    $default_shade_hex = $raw_hex;
+                }
+            }
 
             // Get all paint ranges
             $ranges = get_terms(
