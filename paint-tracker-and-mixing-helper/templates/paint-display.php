@@ -127,7 +127,6 @@ $container_class_attr = implode( ' ', array_map( 'sanitize_html_class', $contain
 
                 $row_style   = '';
                 $row_classes = [];
-                $row_attrs   = [];
                 
                 // Row colouring in "rows" mode if we have a hex
                 if ( 'rows' === $display_mode && $hex ) {
@@ -143,30 +142,24 @@ $container_class_attr = implode( ' ', array_map( 'sanitize_html_class', $contain
                 // Make entire row clickable in row-highlight mode when we have a shade URL.
                 if ( 'rows' === $display_mode && $shade_url ) {
                     $row_classes[] = 'pct-row-clickable';
-                    $row_attrs[]   = 'data-shade-url="' . esc_url( $shade_url ) . '"';
                 }
                 
                 // Mark rows with no hex so we can style them differently
                 if ( 'rows' === $display_mode && ! $hex ) {
                     $row_classes[] = 'pct-row-no-hex';
                 }
-                
-                // Build attribute string
-                $attr = '';
-                
-                if ( ! empty( $row_classes ) ) {
-                    $attr .= ' class="' . esc_attr( implode( ' ', $row_classes ) ) . '"';
-                }
-                
-                if ( $row_style ) {
-                    $attr .= ' style="' . esc_attr( $row_style ) . '"';
-                }
-                
-                if ( ! empty( $row_attrs ) ) {
-                    $attr .= ' ' . implode( ' ', $row_attrs );
-                }
                 ?>
-                <tr<?php echo $attr; ?>>
+                <tr
+                    <?php if ( ! empty( $row_classes ) ) : ?>
+                        class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+                    <?php endif; ?>
+                    <?php if ( $row_style ) : ?>
+                        style="<?php echo esc_attr( $row_style ); ?>"
+                    <?php endif; ?>
+                    <?php if ( 'rows' === $display_mode && $shade_url ) : ?>
+                        data-shade-url="<?php echo esc_url( $shade_url ); ?>"
+                    <?php endif; ?>
+                >
 
                     <?php if ( 'dots' === $display_mode ) : ?>
                         <td class="pct-swatch-cell">
@@ -209,9 +202,15 @@ $container_class_attr = implode( ' ', array_map( 'sanitize_html_class', $contain
                                 }
 
                                 if ( '' === $ltitle ) {
-                                    $ltitle = ( $total_links > 1 )
-                                        ? sprintf( __( 'View %d', 'paint-tracker-and-mixing-helper' ), $i + 1 )
-                                        : __( 'View', 'paint-tracker-and-mixing-helper' );
+                                    if ( $total_links > 1 ) {
+                                        /* translators: %d: index of the paint link (starting from 2). */
+                                        $ltitle = sprintf(
+                                            __( 'View %d', 'paint-tracker-and-mixing-helper' ),
+                                            $i + 1
+                                        );
+                                    } else {
+                                        $ltitle = __( 'View', 'paint-tracker-and-mixing-helper' );
+                                    }
                                 }
 
                                 $shown++;
