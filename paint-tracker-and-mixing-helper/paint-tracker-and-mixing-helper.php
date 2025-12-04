@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Paint Tracker and Mixing Helper
  * Description: Shortcodes to display your miniature paint collection, as well as a mixing and shading helper for specific colours.
- * Version: 0.10.5
+ * Version: 0.10.6
  * Author: C4813
  * Text Domain: paint-tracker-and-mixing-helper
  * Domain Path: /languages
@@ -31,7 +31,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         const META_EXCLUDE_SHADE = '_pct_exclude_shade';
 
         // Plugin version (used for asset cache-busting)
-        const VERSION = '0.10.5';
+        const VERSION = '0.10.6';
 
         public function __construct() {
             add_action( 'init', [ $this, 'register_types' ] );
@@ -1296,7 +1296,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         /**
          * Import paints from a CSV file into a specific range.
          *
-         * Expected columns: title, number, hex, base_type, on_shelf (0/1)
+         * Expected columns: title, identifier, hex, base_type, on_shelf (0/1)
          */
         private function import_csv_file( $file_path, $range_id ) {
             if ( ! file_exists( $file_path ) || ! is_readable( $file_path ) ) {
@@ -1320,7 +1320,10 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
 
             // If header row contains "title" etc., skip; otherwise treat as data.
             $header = array_map( 'strtolower', $first_row );
-            if ( in_array( 'title', $header, true ) || in_array( 'number', $header, true ) ) {
+            if (
+                in_array( 'title', $header, true )
+                || in_array( 'identifier', $header, true )
+            ) {
                 // Already consumed header.
             } else {
                 // Rewind to treat first row as data.
@@ -1445,7 +1448,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             $output = fopen( 'php://output', 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 
             // Header row
-            fputcsv( $output, [ 'title', 'number', 'hex', 'base_type', 'on_shelf', 'ranges' ] );
+            fputcsv( $output, [ 'title', 'identifier', 'hex', 'base_type', 'on_shelf', 'ranges' ] );
 
             // Base query
             $args = [
@@ -1533,7 +1536,8 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             $new_columns['title'] = __( 'Title', 'paint-tracker-and-mixing-helper' );
 
             // Then our custom columns
-            $new_columns['pct_number']    = __( 'Code / Type', 'paint-tracker-and-mixing-helper' );
+            $new_columns['pct_number']    = __( 'Identifier', 'paint-tracker-and-mixing-helper' );
+            $new_columns['pct_ranges']    = __( 'Range(s)', 'paint-tracker-and-mixing-helper' );
             $new_columns['pct_hex']       = __( 'Hex', 'paint-tracker-and-mixing-helper' );
             $new_columns['pct_base_type'] = __( 'Base type', 'paint-tracker-and-mixing-helper' );
             $new_columns['pct_on_shelf']  = __( 'On Shelf?', 'paint-tracker-and-mixing-helper' );
@@ -1550,6 +1554,14 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             if ( 'pct_number' === $column ) {
                 $number = get_post_meta( $post_id, self::META_NUMBER, true );
                 echo esc_html( $number );
+            } elseif ( 'pct_ranges' === $column ) {
+                $terms = get_the_terms( $post_id, self::TAX );
+                if ( is_wp_error( $terms ) || empty( $terms ) ) {
+                    echo '—';
+                } else {
+                    $names = wp_list_pluck( $terms, 'name' );
+                    echo esc_html( implode( ', ', $names ) );
+                }
             } elseif ( 'pct_hex' === $column ) {
                 $hex = get_post_meta( $post_id, self::META_HEX, true );
                 echo esc_html( $hex );
@@ -1571,7 +1583,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                       data-exclude-shade="<?php echo esc_attr( $exclude_shade ); ?>">
                     <?php echo $on_shelf ? '✔' : '—'; ?>
                 </span>
-                <?php
+            <?php
             }
         }
 
