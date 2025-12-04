@@ -80,7 +80,23 @@ if ( 'meta_box' === $pct_admin_view ) : ?>
             class="regular-text"
         >
     </p>
-
+    
+    <p>
+        <label>
+            <input
+                type="checkbox"
+                name="pct_gradient"
+                value="1"
+                <?php checked( isset( $pct_gradient ) ? (int) $pct_gradient : 0, 1 ); ?>
+            />
+            <?php esc_html_e( 'Display this colour as a gradient swatch', 'paint-tracker-and-mixing-helper' ); ?>
+        </label>
+        <br>
+        <span class="description">
+            <?php esc_html_e( 'Useful for metallics, washes and similar paints.', 'paint-tracker-and-mixing-helper' ); ?>
+        </span>
+    </p>
+    
     <!-- On shelf + exclude from shading helper -->
     <p>
         <label>
