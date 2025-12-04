@@ -19,7 +19,7 @@ if ( 'meta_box' === $pct_admin_view ) : ?>
 
     <p>
         <label for="pct_number">
-            <strong><?php esc_html_e( 'Paint code / type', 'paint-tracker-and-mixing-helper' ); ?></strong>
+            <strong><?php esc_html_e( 'Identifier', 'paint-tracker-and-mixing-helper' ); ?></strong>
             (e.g. 70.800, A.MIG-023, Base)
         </label><br>
         <input
@@ -392,7 +392,7 @@ elseif ( 'info_settings' === $pct_admin_view ) : ?>
             <li>
                 <?php
                 esc_html_e(
-                    'For each paint, fill in the paint code / type, hex colour, base type, and whether it is on your shelf.',
+                    'For each paint, fill in the identifier, hex colour, base type, and whether it is on your shelf.',
                     'paint-tracker-and-mixing-helper'
                 );
                 ?>
@@ -463,7 +463,7 @@ elseif ( 'info_settings' === $pct_admin_view ) : ?>
                 <code>limit</code> – <?php esc_html_e( 'number of paints to show (-1 shows all).', 'paint-tracker-and-mixing-helper' ); ?>
             </li>
             <li>
-                <code>orderby</code> – <?php esc_html_e( 'either "meta_number" (paint code / type) or "title".', 'paint-tracker-and-mixing-helper' ); ?>
+                <code>orderby</code> – <?php esc_html_e( 'either "meta_number" (identifier) or "title".', 'paint-tracker-and-mixing-helper' ); ?>
             </li>
             <li>
                 <code>shelf</code> – <?php esc_html_e( '"yes" to show only paints marked as on shelf, or "any" to show all paints.', 'paint-tracker-and-mixing-helper' ); ?>
