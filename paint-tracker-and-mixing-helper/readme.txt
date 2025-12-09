@@ -189,8 +189,6 @@ When enabled:
 5. Shade Helper  
 6. CSV Import/Export screen  
 
-(You may replace these with real screenshots.)
-
 ---
 
 == Changelog ==
