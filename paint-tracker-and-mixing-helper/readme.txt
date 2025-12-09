@@ -4,7 +4,7 @@ Tags: painting, hobby, miniatures, colours, tools
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 0.13.0
+Stable tag: 0.13.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,187 +12,116 @@ A complete miniature-paint management system for WordPress: paint tables, colour
 
 == Description ==
 
-Paint Tracker & Mixing Helper is a full-featured paint database and colour-tools plugin for miniature painters.  
-It allows you to catalogue your paints, organise them into ranges, display them on the front end, and use interactive tools for mixing, shading, and highlighting.
+Paint Tracker & Mixing Helper is a full-featured paint database and colour-tools plugin for miniature painters.
 
-Perfect for hobbyists using Citadel, Vallejo, Army Painter, Two Thin Coats, and custom paint collections.
-
-### **Key Features**
+### Key Features
 
 - Custom post type for paints
-- Hierarchical paint ranges (supports parent/child ranges)
-- Paint table shortcode with multiple display modes
-- Interactive two-paint colour mixing tool
-- Smart shading + highlighting helper
+- Hierarchical paint ranges
+- Paint table shortcode (now sortable by **identifier, name, or type**)
+- Two‑paint mixing tool with compatibility checks
+- Smart shading/highlighting helper
 - CSV import & export
-- “Pull range from CSV” mode (supports assigning multiple ranges per paint)
-- Optional metallic colour support (rendered with a gradient-style swatch for metallics, shades, etc.)
-- On-shelf ownership tracking
-- Linked models/URL fields
-- Exclude-from-shading flag for special paints
-- Fully translatable and theme-friendly
+- Multi‑range auto‑assignment via CSV
+- Metallic/shade gradient support (`0`, `1`, `2`)
+- Ownership tracking
+- Linked URLs
+- Exclude‑from‑shading flag
 
 ---
 
 == Data Model ==
 
-### **Custom Post Type: paint_color**
-Each paint stores:
+### Custom Post Type: paint_color
+Fields:
 
-- Name (post title)
-- Identifier/number (e.g. 70.861, Layer, Base, Wash)
-- Base type (acrylic, enamel, oil, lacquer)
-- Primary hex colour
-- Optional metallic colour
-- On-shelf toggle (ownership tracking)
+- Name (title)
+- Identifier
+- **Type (new)**
+- Base type (acrylic/enamel/oil/lacquer)
+- Hex colour
+- Gradient (0/1/2 — none/metallic/shade)
+- On shelf
 - Exclude from shading helper
-- Linked URL fields
+- Linked URLs
 
-### **Taxonomy: paint_range**
-A hierarchical taxonomy used to organise paints.
-
-Supports nested ranges, e.g.:
-
-- Citadel  
-  - Base  
-  - Layer  
-  - Shade  
-
-Used across all shortcodes and admin screens.
+### Taxonomy: paint_range
+Hierarchical paint ranges used in all UI + shortcodes.
 
 ---
 
 == Shortcodes ==
 
-### **1. Paint Table — `[paint_table]`**
-
+### 1. `[paint_table]`
 Displays a sortable, filterable table of paints.
 
 **Attributes:**
-- `range` – taxonomy slug  
-- `limit` – number of paints (default: 100, use `-1` for all)  
-- `orderby` – `meta_number` (default) or `title`  
-- `shelf` – `yes` or `any`  
+- `range`
+- `limit`
+- `orderby` — `meta_number`, `title`, **`type`**
+- `shelf`
 
 Example:
-
 ```
-[paint_table range="vallejo-model-color" limit="-1" orderby="meta_number" shelf="any"]
+[paint_table range="two-thin-coats" orderby="type"]
 ```
-
-Two display modes are available via plugin settings:
-
-- **Dots mode** — compact list with colour swatches  
-- **Row tint mode** — entire row coloured by the paint hex  
-
-Tables also support:
-
-- Linked model URLs  
-- Missing HEX colour warnings  
-- Click-through to shade helper (if configured)
 
 ---
 
-### **2. Mixing Helper — `[mixing-helper]`**
+### 2. `[mixing-helper]`
+Two-paint live mixer with ratio control and compatibility warnings.
 
-A live two-paint colour mixing calculator.
-
-Features:
-
-- Range dropdown  
-- Two paint selectors  
-- “Parts” ratio input  
-- Real-time mixed colour preview  
-- Base-type compatibility warnings  
-- Gradient blending for metallics/shades  
-
----
-
-### **3. Shade Helper — `[shade-helper]`**
-
-Provides instant lighter/darker paint suggestions.
-
-Features:
-
-- Range filter  
-- Paint selector with swatch  
-- Strict and relaxed hue modes  
-- “Exclude from shading helper” respected  
-- Optional deep-linking from paint table rows  
+### 3. `[shade-helper]`
+Darker/lighter paint suggestions with hue‑matching modes.
 
 ---
 
 == CSV Import & Export ==
 
-Located under **Paint Colours → Import / Export**.
-
-### **Export**
-
-Exports all paints in the selected range, including:
-
+### Export includes:
 - name  
 - identifier  
+- **type**  
 - hex  
 - base type  
 - on shelf  
-- gradient (metallic or shade flag)  
-- ranges (pipe-separated: `Vallejo|Vallejo Model Color`)  
+- gradient (0/1/2)  
+- ranges  
 
----
+### Import
+Two modes:
 
-### **Import**
+#### Standard
+Assign all paints to one selected range.
 
-Two modes are supported:
-
-#### **Standard Mode**
-Assigns all imported paints to one selected range.
-
-#### **Pull Range from CSV Mode**
-When enabled:
-
-- The `ranges` column is required  
-- Multiple ranges are separated by a pipe (`|`)  
-- Missing ranges are automatically created  
-- Paints can belong to several ranges simultaneously  
+#### Pull range from CSV
+Uses `ranges` column, pipe‑separated.
 
 **Expected CSV columns:**
-
 1. name  
 2. identifier  
-3. hex  
-4. base type (`acrylic`, `enamel`, `oil`, `lacquer`)  
-5. on shelf (`0` or `1`, optional)  
-6. gradient (`0`, `1`, or `2`, optional; 0 = no gradient, 1 = metallic gradient, 2 = shade gradient) 
-7. ranges (pipe-separated, optional unless in CSV-range mode)
+3. **type**  
+4. hex  
+5. base type  
+6. on shelf  
+7. gradient  
+8. ranges  
 
 ---
 
 == Installation ==
-
-1. Upload plugin to `/wp-content/plugins/`.
-2. Activate **Paint Tracker & Mixing Helper**.
-3. Create paint ranges under **Paint Colours → Paint Ranges**.
-4. Add paints manually or import via CSV.
-5. Use the shortcodes:
-   - `[paint_table]`
-   - `[mixing-helper]`
-   - `[shade-helper]`
-
----
-
-== Screenshots ==
-
-1. Admin paint editor with metadata fields  
-2. Paint table (dots mode)  
-3. Paint table (row tint mode)  
-4. Mixing Helper  
-5. Shade Helper  
-6. CSV Import/Export screen  
+1. Upload plugin  
+2. Activate  
+3. Create paint ranges  
+4. Add/import paints  
+5. Use shortcodes  
 
 ---
 
 == Changelog ==
 
----
+= 0.13.1 =
+* Added support for ordering paint tables by Type
+* Updated readme files to document new Type field and CSV changes
+* Internal consistency improvements for gradient/metallic/shade flags
 
-== Upgrade Notice ==
