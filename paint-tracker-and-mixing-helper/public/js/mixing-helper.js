@@ -4,25 +4,39 @@ jQuery( function( $ ) {
     var closeAllDropdowns = window.pctColorUtils.closeAllDropdowns;
     
     // Build gradient background style for a hex + text colour.
-    function gradientBackgroundStyle( hex, textColor ) {
+    // gradientType: 1 = metallic (white highlight), 2 = shade (black).
+    function gradientBackgroundStyle( hex, textColor, gradientType ) {
         if ( ! hex ) {
             return '';
         }
-
-        return {
-            background: hex,
-            'background-image': 'radial-gradient(' +
-                'circle at 50% 50%,' +
+    
+        gradientType = parseInt( gradientType, 10 ) || 1;
+    
+        var stops;
+        if ( gradientType === 2 ) {
+            // Shade: dark patch towards the right end.
+            stops =
+                'circle at 90% 50%,' +
+                'rgba(0,0,0,0.68) 0%,' +
+                'rgba(0,0,0,0.42) 20%,' +
+                'rgba(0,0,0,0.24) 36%,' +
+                'rgba(0,0,0,0) 58%';
+        } else {
+            // Metallic: highlight towards the left end.
+            stops =
+                'circle at 10% 50%,' +
                 'rgba(255,255,255,0.68) 0%,' +
                 'rgba(255,255,255,0.42) 20%,' +
                 'rgba(255,255,255,0.24) 36%,' +
-                'rgba(0,0,0,0) 58%,' +
-                'rgba(0,0,0,0.25) 100%' +
-            ')',
+                'rgba(0,0,0,0) 58%';
+        }
+    
+        return {
+            background: hex,
+            'background-image': 'radial-gradient(' + stops + ')',
             color: textColor
         };
     }
-
 
     // Turn "acrylic" -> "Acrylic" etc.
     function pctHumanBaseType( type ) {
@@ -114,7 +128,7 @@ jQuery( function( $ ) {
 
             $hidden.val( hex );
             $dropdown.attr( 'data-hex', hex );
-            $dropdown.attr( 'data-gradient', gradient ? '1' : '0' );
+            $dropdown.attr( 'data-gradient', String( gradient || 0 ) );
 
             if ( baseType ) {
                 $dropdown.attr( 'data-base-type', baseType );
@@ -212,11 +226,19 @@ jQuery( function( $ ) {
         var partsLeft  = parseInt( $leftParts.val(), 10 );
         var partsRight = parseInt( $rightParts.val(), 10 );
 
-        var baseTypeLeft  = $leftDropdown.attr( 'data-base-type' ) || '';
-        var baseTypeRight = $rightDropdown.attr( 'data-base-type' ) || '';
-        var gradientLeft  = $leftDropdown.attr( 'data-gradient' ) === '1';
-        var gradientRight = $rightDropdown.attr( 'data-gradient' ) === '1';
-        var useGradient   = gradientLeft || gradientRight;
+        var baseTypeLeft   = $leftDropdown.attr( 'data-base-type' ) || '';
+        var baseTypeRight  = $rightDropdown.attr( 'data-base-type' ) || '';
+        var gradientLeft   = parseInt( $leftDropdown.attr( 'data-gradient' ) || '0', 10 ) || 0;
+        var gradientRight  = parseInt( $rightDropdown.attr( 'data-gradient' ) || '0', 10 ) || 0;
+        
+        // If either paint is a shade, treat the mix as shade; else metallic; else flat.
+        var gradientType = 0;
+        if ( gradientLeft === 2 || gradientRight === 2 ) {
+            gradientType = 2;
+        } else if ( gradientLeft === 1 || gradientRight === 1 ) {
+            gradientType = 1;
+        }
+        var useGradient = gradientType !== 0;
 
         var $resultBlock  = $container.find( '.pct-mix-result-block' );
         var $resultHex    = $container.find( '.pct-mix-result-hex' );
@@ -287,7 +309,7 @@ jQuery( function( $ ) {
         var textColor = textColorForHex(mixedHex);
         
         if (useGradient) {
-            $resultBlock.css( gradientBackgroundStyle(mixedHex, textColor) );
+            $resultBlock.css( gradientBackgroundStyle( mixedHex, textColor, gradientType ) );
         } else {
             $resultBlock.css({
                 background: '',
