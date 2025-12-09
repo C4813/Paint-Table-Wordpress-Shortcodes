@@ -85,18 +85,28 @@ if ( 'meta_box' === $pct_admin_view ) : ?>
         <label>
             <input
                 type="checkbox"
-                name="pct_gradient"
+                name="pct_gradient_metallic"
                 value="1"
                 <?php checked( isset( $pct_gradient ) ? (int) $pct_gradient : 0, 1 ); ?>
             />
-            <?php esc_html_e( 'Display this colour as a gradient swatch', 'paint-tracker-and-mixing-helper' ); ?>
+            <?php esc_html_e( 'Metallic colour (use a metallic-style swatch)', 'paint-tracker-and-mixing-helper' ); ?>
+        </label>
+        <br>
+        <label>
+            <input
+                type="checkbox"
+                name="pct_gradient_shade"
+                value="1"
+                <?php checked( isset( $pct_gradient ) ? (int) $pct_gradient : 0, 2 ); ?>
+            />
+            <?php esc_html_e( 'Shade colour (use a darker shade-style swatch)', 'paint-tracker-and-mixing-helper' ); ?>
         </label>
         <br>
         <span class="description">
-            <?php esc_html_e( 'Useful for metallics, washes and similar paints.', 'paint-tracker-and-mixing-helper' ); ?>
+            <?php esc_html_e( 'Use at most one of these options – leave both unchecked for a flat colour swatch.', 'paint-tracker-and-mixing-helper' ); ?>
         </span>
     </p>
-    
+
     <!-- On shelf + exclude from shading helper -->
     <p>
         <label>
@@ -244,7 +254,7 @@ elseif ( 'import_page' === $pct_admin_view ) : ?>
             </li>
             <li>
                 <?php esc_html_e(
-                    'gradient – 0 or 1 (optional; 1 = display as gradient, 0 = solid block).',
+                    'gradient – 0, 1 or 2 (optional; 0 = no special swatch, 1 = metallic colour, 2 = shade colour).',
                     'paint-tracker-and-mixing-helper'
                 ); ?>
             </li>
@@ -452,30 +462,6 @@ elseif ( 'export_page' === $pct_admin_view ) : ?>
                                 );
                                 ?>
                             </p>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <th scope="row">
-                            <label for="pct_export_only_shelf">
-                                <?php esc_html_e( 'Only paints on shelf', 'paint-tracker-and-mixing-helper' ); ?>
-                            </label>
-                        </th>
-                        <td>
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    name="pct_export_only_shelf"
-                                    id="pct_export_only_shelf"
-                                    value="1"
-                                >
-                                <?php
-                                esc_html_e(
-                                    'Only export paints marked as “On the shelf”.',
-                                    'paint-tracker-and-mixing-helper'
-                                );
-                                ?>
-                            </label>
                         </td>
                     </tr>
                 </tbody>
@@ -811,7 +797,7 @@ elseif ( 'info_settings' === $pct_admin_view ) : ?>
                 <?php esc_html_e( 'on_shelf – 0 or 1 to indicate whether the paint is on your shelf.', 'paint-tracker-and-mixing-helper' ); ?>
             </li>
             <li>
-                <?php esc_html_e( 'gradient – optional 0 or 1; 1 means the paint colour will be displayed with a gradient swatch.', 'paint-tracker-and-mixing-helper' ); ?>
+                <?php esc_html_e( 'gradient – optional 0 or 1; 1 marks the paint as a metallic colour and displays it with a metallic-style gradient swatch.', 'paint-tracker-and-mixing-helper' ); ?>
             </li>
         </ul>
         <p>
