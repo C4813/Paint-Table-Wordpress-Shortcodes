@@ -17,7 +17,16 @@
                 <input type="text" name="pct_number" class="ptitle" value="">
             </span>
         </label>
-
+        
+        <label>
+            <span class="title">
+                <?php esc_html_e( 'Type', 'paint-tracker-and-mixing-helper' ); ?>
+            </span>
+            <span class="input-text-wrap">
+                <input type="text" name="pct_type" class="ptitle" value="">
+            </span>
+        </label>
+        
         <label>
             <span class="title">
                 <?php esc_html_e( 'Hex', 'paint-tracker-and-mixing-helper' ); ?>
