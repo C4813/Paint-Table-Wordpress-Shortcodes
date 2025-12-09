@@ -30,6 +30,19 @@ if ( 'meta_box' === $pct_admin_view ) : ?>
             class="regular-text"
         >
     </p>
+    
+    <p>
+        <label for="pct_type">
+            <strong><?php esc_html_e( 'Type', 'paint-tracker-and-mixing-helper' ); ?></strong>
+        </label><br>
+        <input
+            type="text"
+            id="pct_type"
+            name="pct_type"
+            value="<?php echo isset( $pct_type ) ? esc_attr( $pct_type ) : ''; ?>"
+            class="regular-text"
+        >
+    </p>
 
     <p>
         <label for="pct_base_type">
@@ -230,7 +243,13 @@ elseif ( 'import_page' === $pct_admin_view ) : ?>
             </li>
             <li>
                 <?php esc_html_e(
-                    'identifier/number – e.g. 70.861, Layer, Wash.',
+                    'identifier/number – e.g. 70.861.',
+                    'paint-tracker-and-mixing-helper'
+                ); ?>
+            </li>
+            <li>
+                <?php esc_html_e(
+                    'type – e.g. Base, Layer, Wash.',
                     'paint-tracker-and-mixing-helper'
                 ); ?>
             </li>
@@ -525,7 +544,7 @@ elseif ( 'info_settings' === $pct_admin_view ) : ?>
             <li>
                 <?php
                 esc_html_e(
-                    'For each paint, fill in the identifier, hex colour, base type, and whether it is on your shelf.',
+                    'For each paint, fill in the Identifier, optional Type (e.g. Base, Layer, Wash), hex colour, base type, whether it is on your shelf, and (optionally) whether it is a metallic or shade colour.',
                     'paint-tracker-and-mixing-helper'
                 );
                 ?>
@@ -555,10 +574,10 @@ elseif ( 'info_settings' === $pct_admin_view ) : ?>
             <li>
                 <strong><?php esc_html_e( 'Paint Colours', 'paint-tracker-and-mixing-helper' ); ?></strong>
                 – <?php
-                esc_html_e(
-                    'each paint has a title (name), an optional paint code / type, a hex colour, a base type (for mixing compatibility), an “on shelf” flag, and optional external links (manufacturer site, reviews, example builds, etc.).',
-                    'paint-tracker-and-mixing-helper'
-                );
+            esc_html_e(
+                'each paint has a title (name), an optional Identifier, an optional Type (e.g. Base, Layer, Wash), a main hex colour, a base type (acrylic, enamel, oil, lacquer, etc.), an “on shelf” flag, an “Exclude from shading helper” flag, optional metallic/shade flags, and optional external links (manufacturer site, reviews, example builds, etc.).',
+                'paint-tracker-and-mixing-helper'
+            );
                 ?>
             </li>
             <li>
@@ -596,7 +615,7 @@ elseif ( 'info_settings' === $pct_admin_view ) : ?>
                 <code>limit</code> – <?php esc_html_e( 'number of paints to show (-1 shows all).', 'paint-tracker-and-mixing-helper' ); ?>
             </li>
             <li>
-                <code>orderby</code> – <?php esc_html_e( 'either "meta_number" (identifier) or "title".', 'paint-tracker-and-mixing-helper' ); ?>
+                <code>orderby</code> – <?php esc_html_e( 'either "meta_number" (Identifier), "title", or "type".', 'paint-tracker-and-mixing-helper' ); ?>
             </li>
             <li>
                 <code>shelf</code> – <?php esc_html_e( '"yes" to show only paints marked as on shelf, or "any" to show all paints.', 'paint-tracker-and-mixing-helper' ); ?>
@@ -785,19 +804,25 @@ elseif ( 'info_settings' === $pct_admin_view ) : ?>
                 <?php esc_html_e( 'title – paint name', 'paint-tracker-and-mixing-helper' ); ?>
             </li>
             <li>
-                <?php esc_html_e( 'number – paint number (optional)', 'paint-tracker-and-mixing-helper' ); ?>
+                <?php esc_html_e( 'number – paint identifier (optional)', 'paint-tracker-and-mixing-helper' ); ?>
+            </li>
+            <li>
+                <?php esc_html_e( 'type – optional free-text type, e.g. Base, Layer, Wash', 'paint-tracker-and-mixing-helper' ); ?>
             </li>
             <li>
                 <?php esc_html_e( 'hex – hex colour, e.g. #2f353a or 2f353a', 'paint-tracker-and-mixing-helper' ); ?>
             </li>
             <li>
-                <?php esc_html_e( 'base_type – base type for the paint (for example: acrylic, enamel, oil, lacquer).', 'paint-tracker-and-mixing-helper' ); ?>
+                <?php esc_html_e( 'base_type – base type for the paint, e.g. acrylic, enamel, oil, lacquer (used to warn about incompatible mixes).', 'paint-tracker-and-mixing-helper' ); ?>
             </li>
             <li>
                 <?php esc_html_e( 'on_shelf – 0 or 1 to indicate whether the paint is on your shelf.', 'paint-tracker-and-mixing-helper' ); ?>
             </li>
             <li>
-                <?php esc_html_e( 'gradient – optional 0 or 1; 1 marks the paint as a metallic colour and displays it with a metallic-style gradient swatch.', 'paint-tracker-and-mixing-helper' ); ?>
+                <?php esc_html_e( 'gradient – optional; 0 = none, 1 = metallic colour, 2 = shade colour. Legacy CSVs with 0/1 are still accepted.', 'paint-tracker-and-mixing-helper' ); ?>
+            </li>
+            <li>
+                <?php esc_html_e( 'ranges – only used if “Pull range from CSV” is enabled; list of range names separated by "|", if more than one.', 'paint-tracker-and-mixing-helper' ); ?>
             </li>
         </ul>
         <p>
@@ -822,10 +847,7 @@ elseif ( 'info_settings' === $pct_admin_view ) : ?>
         </p>
         <ul>
             <li>
-                <?php esc_html_e( 'Filter by paint range.', 'paint-tracker-and-mixing-helper' ); ?>
-            </li>
-            <li>
-                <?php esc_html_e( 'Optionally limit the export to paints marked as on shelf.', 'paint-tracker-and-mixing-helper' ); ?>
+                <?php esc_html_e( 'Filter by paint range (or export all ranges).', 'paint-tracker-and-mixing-helper' ); ?>
             </li>
         </ul>
         <p>
@@ -836,19 +858,25 @@ elseif ( 'info_settings' === $pct_admin_view ) : ?>
                 <?php esc_html_e( 'title – paint name', 'paint-tracker-and-mixing-helper' ); ?>
             </li>
             <li>
-                <?php esc_html_e( 'number – paint number', 'paint-tracker-and-mixing-helper' ); ?>
+                <?php esc_html_e( 'identifier – paint identifier (number/code)', 'paint-tracker-and-mixing-helper' ); ?>
+            </li>
+            <li>
+                <?php esc_html_e( 'type – free-text type, e.g. Base, Layer, Wash (optional)', 'paint-tracker-and-mixing-helper' ); ?>
             </li>
             <li>
                 <?php esc_html_e( 'hex – hex colour', 'paint-tracker-and-mixing-helper' ); ?>
             </li>
             <li>
-                <?php esc_html_e( 'base_type – base type for the paint (for example: acrylic, enamel, oil, lacquer).', 'paint-tracker-and-mixing-helper' ); ?>
+                <?php esc_html_e( 'base_type – base type for the paint, e.g. acrylic, enamel, oil, lacquer.', 'paint-tracker-and-mixing-helper' ); ?>
             </li>
             <li>
                 <?php esc_html_e( 'on_shelf – 0 or 1', 'paint-tracker-and-mixing-helper' ); ?>
             </li>
             <li>
-                <?php esc_html_e( 'ranges – list of range names for the paint (separated by a pipe character "|", if more than one).', 'paint-tracker-and-mixing-helper' ); ?>
+                <?php esc_html_e( 'ranges – list of range names separated by "|", if more than one.', 'paint-tracker-and-mixing-helper' ); ?>
+            </li>
+            <li>
+                <?php esc_html_e( 'gradient – 0 = none, 1 = metallic colour, 2 = shade colour.', 'paint-tracker-and-mixing-helper' ); ?>
             </li>
         </ul>
     </div>
