@@ -21,8 +21,16 @@ jQuery( function( $ ) {
                 var $row     = $( '#post-' + postId );
                 var $editRow = $( '#edit-' + postId );
 
-                var number = $( '.column-pct_number', $row ).text().trim();
-                var hex    = $( '.column-pct_hex', $row ).text().trim();
+                var numberCell = $( '.column-pct_number', $row );
+                var number     = numberCell.text().trim();
+                var type       = '';
+    
+                var typeSpan = numberCell.find( '.pct-number-value' );
+                if ( typeSpan.length ) {
+                    type = typeSpan.data( 'type' ) || '';
+                }
+    
+                var hex = $( '.column-pct_hex', $row ).text().trim();
 
                 var metaEl       = $row.find( '.pct-on-shelf-value' );
                 var onShelf      = false;
@@ -37,6 +45,7 @@ jQuery( function( $ ) {
                 }
 
                 $( 'input[name="pct_number"]',        $editRow ).val( number );
+                $( 'input[name="pct_type"]',          $editRow ).val( type );
                 $( 'input[name="pct_hex"]',           $editRow ).val( hex );
                 $( 'input[name="pct_on_shelf"]',      $editRow ).prop( 'checked', onShelf );
                 $( 'input[name="pct_exclude_shade"]', $editRow ).prop( 'checked', excludeShade );
