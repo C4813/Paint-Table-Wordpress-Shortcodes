@@ -38,3 +38,31 @@ body.post-type-paint_color .inline-edit-col-left .inline-edit-col label {
     display: block;
     margin-bottom: 4px;
 }
+
+/* ============================
+   Shade Helper – Nitty-gritty accordion
+   ============================ */
+
+.pct-nitty-gritty {
+    margin-top: 16px;
+}
+
+.pct-nitty-gritty > summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.pct-nitty-gritty-content {
+    margin-top: 12px;
+    max-width: 950px;
+}
+
+/* Optional: small visual polish for readability */
+.pct-nitty-gritty-content h4 {
+    margin-top: 1.2em;
+}
+
+.pct-nitty-gritty-content ul {
+    margin-left: 1.5em;
+    list-style: disc;
+}
