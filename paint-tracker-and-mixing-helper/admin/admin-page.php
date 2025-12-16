@@ -299,9 +299,14 @@ elseif ( 'import_page' === $pct_admin_view ) : ?>
                         <td>
                             <?php
                             // Selected range from POST (if any).
-                            $selected_range = isset( $_POST['pct_range'] )
-                                ? (int) $_POST['pct_range']
-                                : 0;
+                            $selected_range = 0;
+                            
+                            if ( isset( $_POST['pct_range'], $_POST['pct_import_nonce'] ) ) {
+                                $nonce = sanitize_text_field( wp_unslash( $_POST['pct_import_nonce'] ) );
+                                if ( wp_verify_nonce( $nonce, 'pct_import_paints' ) ) {
+                                    $selected_range = absint( wp_unslash( $_POST['pct_range'] ) );
+                                }
+                            }
 
                             // Build parent → children map from $pct_import_ranges,
                             // preserving the order coming from get_terms()
@@ -528,11 +533,12 @@ elseif ( 'info_settings' === $pct_admin_view ) : ?>
             <?php
                 printf(
                     wp_kses_post(
+                        /* translators: %s: URL to downloadable CSV paint ranges */
                         __( 'You can download free .csv files to import various paints and ranges from <a href="%s" target="_blank" rel="noopener noreferrer">https://www.scalemodelsbycable.com/paint-ranges</a>.', 'paint-tracker-and-mixing-helper' )
                     ),
-                        esc_url( 'https://www.scalemodelsbycable.com/paint-ranges/' )
-                    );
-                    ?>
+                    esc_url( 'https://www.scalemodelsbycable.com/paint-ranges/' )
+                );
+            ?>
         </p>
         <p>
             <?php
