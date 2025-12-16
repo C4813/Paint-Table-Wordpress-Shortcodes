@@ -1,42 +1,8 @@
 jQuery( function( $ ) {
 
     var pctMixL10n        = window.pctColorUtils.makeL10nHelper( 'pctMixingHelperL10n' );
-    var closeAllDropdowns = window.pctColorUtils.closeAllDropdowns;
-    
-    // Build gradient background style for a hex + text colour.
-    // gradientType: 1 = metallic (white highlight), 2 = shade (black).
-    function gradientBackgroundStyle( hex, textColor, gradientType ) {
-        if ( ! hex ) {
-            return '';
-        }
-    
-        gradientType = parseInt( gradientType, 10 ) || 1;
-    
-        var stops;
-        if ( gradientType === 2 ) {
-            // Shade: dark patch towards the right end.
-            stops =
-                'circle at 90% 50%,' +
-                'rgba(0,0,0,0.68) 0%,' +
-                'rgba(0,0,0,0.42) 20%,' +
-                'rgba(0,0,0,0.24) 36%,' +
-                'rgba(0,0,0,0) 58%';
-        } else {
-            // Metallic: highlight towards the left end.
-            stops =
-                'circle at 10% 50%,' +
-                'rgba(255,255,255,0.68) 0%,' +
-                'rgba(255,255,255,0.42) 20%,' +
-                'rgba(255,255,255,0.24) 36%,' +
-                'rgba(0,0,0,0) 58%';
-        }
-    
-        return {
-            background: hex,
-            'background-image': 'radial-gradient(' + stops + ')',
-            color: textColor
-        };
-    }
+    var closeAllDropdowns = window.pctUiUtils.closeAllDropdowns;
+    var bindOpenClose     = window.pctUiUtils.bindOpenClose;
 
     // Turn "acrylic" -> "Acrylic" etc.
     function pctHumanBaseType( type ) {
@@ -97,20 +63,7 @@ jQuery( function( $ ) {
         var $label   = $dropdown.find( '.pct-mix-trigger-label' );
         var $swatch  = $dropdown.find( '.pct-mix-trigger-swatch' );
 
-        // Open/close list.
-        $trigger.on( 'click', function( e ) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            var isOpen = $dropdown.hasClass( 'pct-mix-open' );
-
-            closeAllDropdowns();
-
-            if ( ! isOpen ) {
-                $dropdown.addClass( 'pct-mix-open' );
-                $list.removeAttr( 'hidden' );
-            }
-        } );
+        bindOpenClose( $dropdown );
 
         // Select an option.
         $list.on( 'click', '.pct-mix-option:visible', function( e ) {
@@ -166,20 +119,7 @@ jQuery( function( $ ) {
         var $hidden  = $dropdown.find( '.pct-mix-range-value' );
         var $label   = $dropdown.find( '.pct-mix-trigger-label' );
 
-        // Open/close list.
-        $trigger.on( 'click', function( e ) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            var isOpen = $dropdown.hasClass( 'pct-mix-open' );
-
-            closeAllDropdowns();
-
-            if ( ! isOpen ) {
-                $dropdown.addClass( 'pct-mix-open' );
-                $list.removeAttr( 'hidden' );
-            }
-        } );
+        bindOpenClose( $dropdown );
 
         // Select a range.
         $list.on( 'click', '.pct-mix-range-option', function( e ) {
@@ -309,7 +249,16 @@ jQuery( function( $ ) {
         var textColor = textColorForHex(mixedHex);
         
         if (useGradient) {
-            $resultBlock.css( gradientBackgroundStyle( mixedHex, textColor, gradientType ) );
+            var css = window.pctColorUtils.gradientCss( mixedHex, textColor, gradientType );
+
+            if ( css ) {
+                $resultBlock.css( {
+                    background: css.background,
+                    'background-image': css.backgroundImage,
+                    color: css.color
+                } );
+            }
+
         } else {
             $resultBlock.css({
                 background: '',
