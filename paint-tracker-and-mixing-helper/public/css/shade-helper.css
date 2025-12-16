@@ -1,0 +1,183 @@
+/* ============================
+   Shade helper
+   ============================ */
+
+.pct-shade-container {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin: 20px auto;
+    max-width: 640px;
+}
+
+.pct-shade-header {
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+/* ============================
+   Shade helper controls
+   ============================ */
+
+/*
+ * Shade helper reuses the same column and dropdown system
+ * as the mixing helper. Do NOT restyle dropdowns here.
+ */
+.pct-shade-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+}
+
+/* Ensure columns behave identically to mixing helper */
+.pct-shade-container .pct-mix-column,
+.pct-shade-container .pct-mix-column-shade {
+    align-items: center;
+    text-align: center;
+}
+
+/* ============================
+   Shade ladder layout
+   ============================ */
+
+.pct-shade-scale {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.pct-shade-scale > *:first-child {
+    margin-top: 0 !important;
+}
+
+.pct-shade-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+}
+
+/* Base row gets a slightly heavier border */
+.pct-shade-row-base {
+    border-width: 2px;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* Text sizing inside rows – aligned with dropdown option text */
+.pct-shade-row-main,
+.pct-shade-row-hex {
+    font-size: 13px;
+    line-height: 1.3;
+}
+
+.pct-shade-ratio {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.pct-shade-hex {
+    font-size: 13px;
+    opacity: 0.9;
+}
+
+/* Empty-message styling */
+.pct-shade-empty {
+    font-size: 13px;
+    text-align: center;
+    color: #6b7280;
+    margin: 4px 0 0;
+}
+
+/* ============================
+   Dual ladder layout
+   ============================ */
+
+/* Two ladders side by side */
+.pct-shade-ladders {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    overflow: visible;
+}
+
+.pct-shade-ladder {
+    flex: 1 1 0;
+    min-width: 220px;
+    position: relative;
+}
+
+/* Make a single empty-message span both ladders */
+.pct-shade-ladder--strict .pct-shade-empty {
+    position: relative;
+    width: calc(200% + 12px);
+}
+
+.pct-shade-ladder--relaxed .pct-shade-empty {
+    visibility: hidden;
+}
+
+/* Hide duplicate base row on relaxed ladder, keep spacing */
+.pct-shade-ladder--relaxed .pct-shade-row-base {
+    visibility: hidden;
+}
+
+/*
+ * Make strict ladder rows span both columns
+ */
+.pct-shade-ladder--strict .pct-shade-row-base,
+.pct-shade-ladder--strict .pct-shade-row-merged {
+    position: relative;
+    width: calc(200% + 12px);
+}
+
+/* Hide merged duplicates on relaxed side */
+.pct-shade-ladder--relaxed .pct-shade-row-merged {
+    visibility: hidden;
+}
+
+/* ============================
+   Row internals
+   ============================ */
+
+.pct-shade-line {
+    line-height: 1.35;
+    margin-bottom: 2px;
+}
+
+/* Arrow rows */
+.pct-shade-row-arrow {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+.pct-shade-row-arrow .pct-shade-row-main {
+    font-size: 18px;
+    line-height: 1;
+    text-align: center;
+}
+
+.pct-shade-row-arrow .pct-shade-row-hex {
+    display: none;
+}
+
+.pct-shade-arrow-icon {
+    display: inline-block;
+    color: #000000;
+}
+
+/* Ensure shade rows never conflict with mix result block */
+.pct-mix-result-block.pct-shade-row {
+    display: none;
+}
