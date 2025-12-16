@@ -1,7 +1,8 @@
 jQuery( function( $ ) {
 
     var pctL10n           = window.pctColorUtils.makeL10nHelper( 'pctShadeHelperL10n' );
-    var closeAllDropdowns = window.pctColorUtils.closeAllDropdowns;
+    var closeAllDropdowns = window.pctUiUtils.closeAllDropdowns;
+    var bindOpenClose     = window.pctUiUtils.bindOpenClose;
 
     // ---------- Colour helpers (shared via pct-color-utils.js) ----------
 
@@ -9,39 +10,6 @@ jQuery( function( $ ) {
     var mixColors       = window.pctColorUtils.mixColors;
     var textColorForHex = window.pctColorUtils.textColorForHex;
     
-    // Build a row gradient style string from a hex + text colour.
-    // gradientType: 1 = metallic (light), 2 = shade (dark).
-    function pctShadeGradientStyle( hex, textColor, gradientType ) {
-        if ( ! hex ) {
-            return '';
-        }
-    
-        gradientType = parseInt( gradientType, 10 ) || 1;
-    
-        var stops;
-        if ( gradientType === 2 ) {
-            // Shade: same shape as metallic, but dark instead of light.
-            stops =
-                'circle at 90% 50%,' +
-                'rgba(0,0,0,0.68) 0%,' +
-                'rgba(0,0,0,0.42) 20%,' +
-                'rgba(0,0,0,0.24) 36%,' +
-                'rgba(0,0,0,0) 58%';
-        } else {
-            // Metallic (default): white highlight, but on the right.
-            stops =
-                'circle at 90% 50%,' +
-                'rgba(255,255,255,0.68) 0%,' +
-                'rgba(255,255,255,0.42) 20%,' +
-                'rgba(255,255,255,0.24) 36%,' +
-                'rgba(0,0,0,0) 58%';
-        }
-    
-        return 'background:' + hex + ';' +
-               'background-image: radial-gradient(' + stops + ');' +
-               ' color:' + textColor + ';';
-    }
-
     $( document ).on( 'click', function() {
         closeAllDropdowns();
     } );
@@ -83,19 +51,7 @@ jQuery( function( $ ) {
         var $label   = $dropdown.find( '.pct-mix-trigger-label' );
         var $swatch  = $dropdown.find( '.pct-mix-trigger-swatch' );
 
-        $trigger.on( 'click', function( e ) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            var isOpen = $dropdown.hasClass( 'pct-mix-open' );
-
-            closeAllDropdowns();
-
-            if ( ! isOpen ) {
-                $dropdown.addClass( 'pct-mix-open' );
-                $list.removeAttr( 'hidden' );
-            }
-        } );
+        bindOpenClose( $dropdown );
 
         $list.on( 'click', '.pct-mix-option:visible', function( e ) {
             e.preventDefault();
@@ -142,19 +98,7 @@ jQuery( function( $ ) {
         var $hidden  = $dropdown.find( '.pct-mix-range-value' );
         var $label   = $dropdown.find( '.pct-mix-trigger-label' );
 
-        $trigger.on( 'click', function( e ) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            var isOpen = $dropdown.hasClass( 'pct-mix-open' );
-
-            closeAllDropdowns();
-
-            if ( ! isOpen ) {
-                $dropdown.addClass( 'pct-mix-open' );
-                $list.removeAttr( 'hidden' );
-            }
-        } );
+        bindOpenClose( $dropdown );
 
         $list.on( 'click', '.pct-mix-range-option', function( e ) {
             e.preventDefault();
@@ -737,9 +681,25 @@ jQuery( function( $ ) {
                     mainHtml = '<div class="pct-shade-line">' + baseLine + '</div>';
 
                     var textColorBase = textColorForHex( row.hex );
-                    styleInline = baseHasGradient
-                        ? pctShadeGradientStyle( row.hex, textColorBase, baseGradientType )
-                        : 'background-color: ' + row.hex + '; color: ' + textColorBase + ';';
+                    if ( baseHasGradient ) {
+                        var cssBase = window.pctColorUtils.gradientCss(
+                            row.hex,
+                            textColorBase,
+                            baseGradientType
+                        );
+                    
+                        styleInline = cssBase
+                            ? (
+                                'background:' + cssBase.background + ';' +
+                                ( cssBase.backgroundImage ? 'background-image:' + cssBase.backgroundImage + ';' : '' ) +
+                                'color:' + cssBase.color + ';'
+                            )
+                            : '';
+                    } else {
+                        styleInline =
+                            'background-color: ' + row.hex + ';' +
+                            ' color: ' + textColorBase + ';';
+                    }
                 } else if ( row.ratio ) {
                     var other      = row.otherLabel || '';
                     var baseLine2  = baseLabel || baseHex.toUpperCase();
@@ -755,18 +715,50 @@ jQuery( function( $ ) {
                         '</div>';
 
                     var textColorMix = textColorForHex( row.hex );
-                    styleInline = baseHasGradient
-                        ? pctShadeGradientStyle( row.hex, textColorMix, baseGradientType )
-                        : 'background-color: ' + row.hex + '; color: ' + textColorMix + ';';
+                    if ( baseHasGradient ) {
+                        var cssMix = window.pctColorUtils.gradientCss(
+                            row.hex,
+                            textColorMix,
+                            baseGradientType
+                        );
+                    
+                        styleInline = cssMix
+                            ? (
+                                'background:' + cssMix.background + ';' +
+                                ( cssMix.backgroundImage ? 'background-image:' + cssMix.backgroundImage + ';' : '' ) +
+                                'color:' + cssMix.color + ';'
+                            )
+                            : '';
+                    } else {
+                        styleInline =
+                            'background-color: ' + row.hex + ';' +
+                            ' color: ' + textColorMix + ';';
+                    }
                 } else {
                     var fallbackText = baseLabel || baseHex.toUpperCase();
 
                     mainHtml = '<div class="pct-shade-line">' + fallbackText + '</div>';
 
                     var textColorFallback = textColorForHex( row.hex );
-                    styleInline = baseHasGradient
-                        ? pctShadeGradientStyle( row.hex, textColorFallback, baseGradientType )
-                        : 'background-color: ' + row.hex + '; color: ' + textColorFallback + ';';
+                    if ( baseHasGradient ) {
+                        var cssFallback = window.pctColorUtils.gradientCss(
+                            row.hex,
+                            textColorFallback,
+                            baseGradientType
+                        );
+                    
+                        styleInline = cssFallback
+                            ? (
+                                'background:' + cssFallback.background + ';' +
+                                ( cssFallback.backgroundImage ? 'background-image:' + cssFallback.backgroundImage + ';' : '' ) +
+                                'color:' + cssFallback.color + ';'
+                            )
+                            : '';
+                    } else {
+                        styleInline =
+                            'background-color: ' + row.hex + ';' +
+                            ' color: ' + textColorFallback + ';';
+                    }
                 }
 
                 if (
