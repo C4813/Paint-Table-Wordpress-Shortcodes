@@ -1,0 +1,183 @@
+/* ============================
+   Dropdown internals (shared)
+   ============================ */
+
+/* Column layout (mixing + shade helpers) */
+.pct-mix-column,
+.pct-mix-column-shade {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+}
+
+/* Field wrapper spacing */
+.pct-mix-field {
+    margin: 0 0 8px;
+}
+
+/* Dropdown wrapper */
+.pct-mix-dropdown,
+.pct-mix-dropdown-shade,
+.pct-mix-range-dropdown,
+.pct-mix-range-dropdown-shade {
+    position: relative;
+    overflow: visible;
+
+    /* SINGLE SOURCE OF TRUTH FOR WIDTH */
+    width: 260px;
+    max-width: 100%;
+    box-sizing: border-box;
+
+    font-size: 14px;
+}
+
+/* ============================
+   Trigger button
+   ============================ */
+
+.pct-mix-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    cursor: pointer;
+    text-align: left;
+}
+
+.pct-mix-trigger:focus {
+    outline: 2px solid #2563eb;
+    outline-offset: 1px;
+}
+
+/* Trigger contents */
+.pct-mix-trigger-swatch {
+    width: 1.4rem;
+    height: 1.4rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 0, 0, 0.18);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+    background: transparent;
+    flex-shrink: 0;
+}
+
+.pct-mix-trigger-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pct-mix-trigger-caret {
+    font-size: 10px;
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+/* ============================
+   Dropdown list
+   ============================ */
+
+/* Hidden state */
+.pct-mix-list[hidden] {
+    display: none !important;
+}
+
+/* Closed by default */
+.pct-mix-dropdown:not(.pct-mix-open) .pct-mix-list,
+.pct-mix-dropdown-shade:not(.pct-mix-open) .pct-mix-list,
+.pct-mix-range-dropdown:not(.pct-mix-open) .pct-mix-list,
+.pct-mix-range-dropdown-shade:not(.pct-mix-open) .pct-mix-list {
+    display: none;
+}
+
+/* Open state */
+.pct-mix-dropdown.pct-mix-open .pct-mix-list,
+.pct-mix-dropdown-shade.pct-mix-open .pct-mix-list,
+.pct-mix-range-dropdown.pct-mix-open .pct-mix-list,
+.pct-mix-range-dropdown-shade.pct-mix-open .pct-mix-list {
+    display: block;
+}
+
+/* Dropdown panel */
+.pct-mix-list {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 1000;
+
+    /* Width behavior */
+    min-width: 100%;
+    width: max-content;
+    max-width: 420px;
+
+    max-height: 320px;
+    overflow-y: auto;
+
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+/* Mobile safety */
+@media (max-width: 480px) {
+    .pct-mix-list {
+        width: 92vw;
+        max-width: 92vw;
+    }
+}
+
+/* ============================
+   Dropdown options
+   ============================ */
+
+.pct-mix-option,
+.pct-mix-range-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.pct-mix-option-swatch {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 0, 0, 0.25);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+    background: transparent;
+}
+
+.pct-mix-option-label {
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Selected state */
+.pct-mix-option.is-selected,
+.pct-mix-range-option.is-selected {
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6);
+}
+
+/* ============================
+   Range dropdown alignment
+   ============================ */
+
+.pct-mix-range-dropdown .pct-mix-list,
+.pct-mix-range-dropdown .pct-mix-range-option,
+.pct-mix-range-dropdown .pct-mix-option-label,
+.pct-mix-range-dropdown-shade .pct-mix-list,
+.pct-mix-range-dropdown-shade .pct-mix-range-option,
+.pct-mix-range-dropdown-shade .pct-mix-option-label {
+    text-align: left;
+}
