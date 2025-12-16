@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Paint Tracker and Mixing Helper
  * Description: Shortcodes to display your miniature paint collection, as well as a mixing and shading helper for specific colours.
- * Version: 0.13.2
+ * Version: 0.13.3
  * Author: C4813
  * Text Domain: paint-tracker-and-mixing-helper
  * Domain Path: /languages
@@ -33,7 +33,51 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
         const META_GRADIENT      = '_pct_gradient';
 
         // Plugin version (used for asset cache-busting)
-        const VERSION = '0.13.2';
+        const VERSION = '0.13.3';
+
+        /**
+         * Centralized sanitizers for paint meta.
+         * Keep all meta normalization rules in one place to avoid drift.
+         */
+        private function sanitize_paint_number( $value ) {
+            return sanitize_text_field( (string) $value );
+        }
+
+        private function sanitize_paint_type( $value ) {
+            return sanitize_text_field( (string) $value );
+        }
+
+        private function sanitize_paint_hex( $value ) {
+            $hex = sanitize_text_field( (string) $value );
+            $hex = trim( $hex );
+
+            if ( '' === $hex ) {
+                return '';
+            }
+
+            // Normalize leading '#'
+            if ( '#' !== $hex[0] ) {
+                $hex = '#' . $hex;
+            }
+
+            // Accept #RGB or #RRGGBB only; otherwise store empty.
+            if ( ! preg_match( '/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $hex ) ) {
+                return '';
+            }
+
+            return $hex;
+        }
+
+        private function sanitize_base_type( $value ) {
+            $base_type = sanitize_text_field( (string) $value );
+            $allowed   = [ 'acrylic', 'enamel', 'oil', 'lacquer' ];
+
+            return in_array( $base_type, $allowed, true ) ? $base_type : '';
+        }
+
+        private function sanitize_bool01( $value ) {
+            return ( (string) $value === '1' || $value === 1 || $value === true ) ? 1 : 0;
+        }
 
         public function __construct() {
             add_action( 'init', [ $this, 'register_types' ] );
@@ -216,13 +260,13 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
 
             // Save number (code / type)
             $number = isset( $_POST['pct_number'] )
-                ? sanitize_text_field( wp_unslash( $_POST['pct_number'] ) )
+                ? $this->sanitize_paint_number( wp_unslash( $_POST['pct_number'] ) )
                 : '';
             update_post_meta( $post_id, self::META_NUMBER, $number );
             
             // Save display Type (e.g. Base / Layer)
             $type = isset( $_POST['pct_type'] )
-                ? sanitize_text_field( wp_unslash( $_POST['pct_type'] ) )
+                ? $this->sanitize_paint_type( wp_unslash( $_POST['pct_type'] ) )
                 : '';
             update_post_meta( $post_id, self::META_TYPE, $type );
 
@@ -240,7 +284,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
 
             // Save hex
             $hex = isset( $_POST['pct_hex'] )
-                ? sanitize_text_field( wp_unslash( $_POST['pct_hex'] ) )
+                ? $this->sanitize_paint_hex( wp_unslash( $_POST['pct_hex'] ) )
                 : '';
             update_post_meta( $post_id, self::META_HEX, $hex );
             
@@ -482,40 +526,33 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 return;
             }
             
-            // Save number
             if ( isset( $_POST['pct_number'] ) ) {
-                $number = sanitize_text_field( wp_unslash( $_POST['pct_number'] ) );
+                $number = $this->sanitize_paint_number( wp_unslash( $_POST['pct_number'] ) );
                 update_post_meta( $post_id, self::META_NUMBER, $number );
             }
-            
-            // Save Type
+
             if ( isset( $_POST['pct_type'] ) ) {
-                $type = sanitize_text_field( wp_unslash( $_POST['pct_type'] ) );
+                $type = $this->sanitize_paint_type( wp_unslash( $_POST['pct_type'] ) );
                 update_post_meta( $post_id, self::META_TYPE, $type );
             }
-            
-            // Save hex
+
             if ( isset( $_POST['pct_hex'] ) ) {
-                $hex = sanitize_text_field( wp_unslash( $_POST['pct_hex'] ) );
+                $hex = $this->sanitize_paint_hex( wp_unslash( $_POST['pct_hex'] ) );
                 update_post_meta( $post_id, self::META_HEX, $hex );
             }
 
-            // Save base type (only if user picked something)
-            if ( isset( $_POST['pct_base_type'] ) && '' !== $_POST['pct_base_type'] ) {
-                $base_type          = sanitize_text_field( wp_unslash( $_POST['pct_base_type'] ) );
-                $allowed_base_types = [ 'acrylic', 'enamel', 'oil', 'lacquer' ];
-                if ( in_array( $base_type, $allowed_base_types, true ) ) {
+            if ( isset( $_POST['pct_base_type'] ) ) {
+                $base_type = $this->sanitize_base_type( wp_unslash( $_POST['pct_base_type'] ) );
+                if ( '' !== $base_type ) {
                     update_post_meta( $post_id, self::META_BASE_TYPE, $base_type );
                 }
             }
 
-            // Save on shelf
             $on_shelf = isset( $_POST['pct_on_shelf'] ) ? 1 : 0;
-            update_post_meta( $post_id, self::META_ON_SHELF, $on_shelf );
+            update_post_meta( $post_id, self::META_ON_SHELF, $this->sanitize_bool01( $on_shelf ) );
 
-            // Save exclude-from-shade flag
             $exclude_shade = isset( $_POST['pct_exclude_shade'] ) ? 1 : 0;
-            update_post_meta( $post_id, self::META_EXCLUDE_SHADE, $exclude_shade );
+            update_post_meta( $post_id, self::META_EXCLUDE_SHADE, $this->sanitize_bool01( $exclude_shade ) );
         }
 
         /**
@@ -584,14 +621,50 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
             if ( ! $has_paint && ! $has_mixing && ! $has_shade ) {
                 return;
             }
-
-            // Shared frontend styles (used by all three UIs).
-            wp_enqueue_style(
-                'pct_paint_table',
-                plugin_dir_url( __FILE__ ) . 'public/css/style.css',
-                [],
-                self::VERSION
-            );
+            
+            // --------------------
+            // Frontend styles (CSS)
+            // --------------------
+            
+            // Shared dropdown styling (mixing + shade only).
+            if ( $has_mixing || $has_shade ) {
+                wp_enqueue_style(
+                    'pct_dropdowns',
+                    plugin_dir_url( __FILE__ ) . 'public/css/dropdowns.css',
+                    [],
+                    self::VERSION
+                );
+            }
+            
+            // Paint table only.
+            if ( $has_paint ) {
+                wp_enqueue_style(
+                    'pct_paint_table_css',
+                    plugin_dir_url( __FILE__ ) . 'public/css/paint-table.css',
+                    [],
+                    self::VERSION
+                );
+            }
+            
+            // Mixing helper only.
+            if ( $has_mixing ) {
+                wp_enqueue_style(
+                    'pct_mixing_helper_css',
+                    plugin_dir_url( __FILE__ ) . 'public/css/mixing-helper.css',
+                    [ 'pct_dropdowns' ],
+                    self::VERSION
+                );
+            }
+            
+            // Shade helper only.
+            if ( $has_shade ) {
+                wp_enqueue_style(
+                    'pct_shade_helper_css',
+                    plugin_dir_url( __FILE__ ) . 'public/css/shade-helper.css',
+                    [ 'pct_dropdowns' ],
+                    self::VERSION
+                );
+            }
 
             // Paint table only.
             if ( $has_paint ) {
@@ -604,11 +677,19 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 );
             }
 
-            // Colour utility helpers (used by mixing + shading).
+            // Shared helpers (used by mixing + shading).
             if ( $has_mixing || $has_shade ) {
                 wp_enqueue_script(
                     'pct_color_utils',
                     plugin_dir_url( __FILE__ ) . 'public/js/pct-color-utils.js',
+                    [ 'jquery' ],
+                    self::VERSION,
+                    true
+                );
+
+                wp_enqueue_script(
+                    'pct_ui_utils',
+                    plugin_dir_url( __FILE__ ) . 'public/js/pct-ui-utils.js',
                     [ 'jquery' ],
                     self::VERSION,
                     true
@@ -620,7 +701,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 wp_enqueue_script(
                     'pct_mixing_helper',
                     plugin_dir_url( __FILE__ ) . 'public/js/mixing-helper.js',
-                    [ 'jquery', 'pct_color_utils' ],
+                    [ 'jquery', 'pct_color_utils', 'pct_ui_utils' ],
                     self::VERSION,
                     true
                 );
@@ -640,7 +721,7 @@ if ( ! class_exists( 'PCT_Paint_Table_Plugin' ) ) {
                 wp_enqueue_script(
                     'pct_shade_helper',
                     plugin_dir_url( __FILE__ ) . 'public/js/shade-helper.js',
-                    [ 'jquery', 'pct_color_utils' ],
+                    [ 'jquery', 'pct_color_utils', 'pct_ui_utils' ],
                     self::VERSION,
                     true
                 );
